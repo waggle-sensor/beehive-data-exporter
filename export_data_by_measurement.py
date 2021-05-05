@@ -78,7 +78,8 @@ def process_date_and_name(date, name):
     meta_headers = {k for r in records for k in r["meta"].keys()}
     meta_fields = sorted(meta_headers)
 
-    tmpfile = Path("measurements", name, date.strftime("%Y-%m-%d.csv.gz.tmp"))
+    tmpfile = Path("work", name, date.strftime("%Y-%m-%d.csv.gz"))
+    tmpfile.parent.mkdir(parents=True, exist_ok=True)
     outfile = Path("measurements", name, date.strftime("%Y-%m-%d.csv.gz"))
     outfile.parent.mkdir(parents=True, exist_ok=True)
 
