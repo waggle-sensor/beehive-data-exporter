@@ -20,13 +20,8 @@ class QueryEncoder(json.JSONEncoder):
 
 
 def get_query_records(query):
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-
     data = json.dumps(query, cls=QueryEncoder).encode()
-
-    with urlopen("https://sdr.honeyhouse.one/api/v1/query", context=ctx, data=data) as resp:
+    with urlopen("https://sdr.sagecontinuum.org/api/v1/query", data=data) as resp:
         return list(map(json.loads, resp))
 
 
