@@ -7,6 +7,7 @@ import json
 import gzip
 from datetime import datetime, timedelta
 import csv
+import re
 import sys
 from pathlib import Path
 
@@ -88,15 +89,28 @@ def datetype(s):
     return datetime.strptime(s, "%Y-%m-%d")
 
 
+def daterange(start, end):
+    date = start
+    while date <= end:
+        yield date
+        date += timedelta(days=1)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("dates", nargs="*", type=datetype, help="dates to export")
+    parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
+    parser.add_argument("start_date", type=datetype, help="starting date to export")
+    parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
+
+    measurementsRE = re.compile(args.measurements)
 
     tasks = []
 
-    for date in args.dates:
+    for date in daterange(args.start_date, args.end_date):
         for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
+            if not measurementsRE.match(r["name"]):
+                continue
             tasks.append({
                 "path": Path("data", r["name"], r["meta"]["node"], date.strftime("%Y-%m-%d.csv.gz")),
                 "query": {
