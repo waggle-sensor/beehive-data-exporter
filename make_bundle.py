@@ -30,7 +30,7 @@ def main():
     # parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
 
-    measurementsRE = re.compile(parser.measurements)
+    measurementsRE = re.compile(args.measurements)
 
     creation_timestamp = datetime.now()
 
