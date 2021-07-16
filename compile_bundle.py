@@ -79,7 +79,11 @@ def main():
 
         write_template(workdir/"README.md", readme_template, creation_timestamp=creation_timestamp)
         build_data_and_index_files(args.datadir, workdir)
+
+        # copy query script
         copyfile("query.py", workdir/"query.py")
+        (workdir/"query.py").chmod(0o755)
+
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
 
 
