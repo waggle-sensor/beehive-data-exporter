@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 from urllib.request import urlopen
-import ssl
-import time
 import json
 import gzip
 from datetime import datetime, timedelta
-import csv
 import re
-import sys
 from pathlib import Path
+import base64
+from hashlib import sha1
 
 # NOTE there are some complications with using CSV in this chunked way, unless we want
 # to maintain a fixed global metadata list of what can be included
@@ -45,21 +43,16 @@ def round_down_to_microseconds(s):
     return s
 
 
-def time_since(t):
-    return timedelta(seconds=time.time() - t)
-
-
 def process_task(task):
-    download_start_time = time.time()
+    download_start_time = datetime.now()
     records = get_query_records(task["query"])
-    download_duration = time_since(download_start_time)
+    download_duration = datetime.now() - download_start_time
 
-    write_start_time = time.time()
+    write_start_time = datetime.now()
 
-    tmpfile = task["path"].with_suffix(".tmp")
-    tmpfile.parent.mkdir(parents=True, exist_ok=True)
     outfile = task["path"]
     outfile.parent.mkdir(parents=True, exist_ok=True)
+    tmpfile = outfile.with_suffix(".tmp")
 
     with gzip.open(tmpfile, "wt") as f:
         for r in records:
@@ -72,7 +65,11 @@ def process_task(task):
 
     tmpfile.rename(outfile)
 
-    write_duration = time_since(write_start_time)
+    write_duration = datetime.now() - write_start_time
+
+    # TODO write to index tempfile?
+    indexfile = outfile.with_name(f"{outfile.name}.index")
+    indexfile.write_text(task["index"])
     
     return {
         "task": task,
@@ -94,6 +91,7 @@ def daterange(start, end):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--root", default="data", type=Path, help="root data directory")
     parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
     parser.add_argument("start_date", type=datetype, help="starting date to export")
     parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
@@ -107,23 +105,37 @@ def main():
         for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
             if not measurementsRE.match(r["name"]):
                 continue
-            tasks.append({
-                "path": Path("data", date.strftime("%Y-%m-%d"), r["meta"]["plugin"], r["name"], r["meta"]["node"], date.strftime("%Y-%m-%d.json.gz")),
-                "query": {
-                    "start": date,
-                    "end": date + timedelta(days=1),
-                    "filter": {
-                        "name": r["name"],
-                        "node": r["meta"]["node"],
-                        "plugin": r["meta"]["plugin"],
-                    }
-                },
-            })
 
+            # build filters to be used later
+            filters = {}
+            filters["name"] = r["name"]
+            filters["date"] = date.strftime("%Y-%m-%d")
+            for k, v in r["meta"].items():
+                filters[k] = v
+            index = json.dumps(filters, separators=(",", ":"), sort_keys=True)
+            chunk_id = sha1(index.encode()).hexdigest()
+
+            query = {
+                "start": date,
+                "end": date + timedelta(days=1),
+                "filter": {
+                    "name": r["name"],
+                }
+            }
+
+            for k, v in r["meta"].items():
+                query["filter"][k] = v
+
+            task = {
+                "path": Path(args.root, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
+                "query": query,
+                "index": index,
+            }
+
+            tasks.append(task)
 
     for task in tasks:
-        print(task)
-        print(process_task(task))
+        process_task(task)
 
 
 if __name__ == "__main__":
