@@ -43,14 +43,34 @@ Archive Creation Timestamp: {creation_timestamp}
 
 ... more text describing data...
 
-## Selecting Data
+## Querying Data
 
-Data can quickly be selected using the `select_data.py` script to pull relevant chunks.
+Data can be queried with `query.py` by providing a list of meta=pattern search terms. Any meta field may be used as a search parameter.
 
-The following example will find all chunks 
+### Examples
+
+1. Find all data from metsense plugins.
 
 ```sh
-./select_data.py --plugin 'metsense'
+./query.py 'plugin=metsense'
+```
+
+2. Find all data from metsense plugins for specific node.
+
+```sh
+./query.py 'plugin=metsense' 'node=000048b02d15bc77'
+```
+
+3. Find all data from for env.* sensors.
+
+```sh
+./query.py 'name=env.*'
+```
+
+4. Find all data from BME680 sensors.
+
+```sh
+./query.py 'sensor=bme680'
 ```
 """
 
