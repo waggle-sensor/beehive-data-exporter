@@ -104,6 +104,8 @@ def main():
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
 
+        copyfile("variables.ndjson", workdir/"variables.ndjson")
+
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
 
 
