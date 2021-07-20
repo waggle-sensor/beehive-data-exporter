@@ -39,6 +39,8 @@ def build_data_and_index_files(datadir, workdir):
 readme_template = """
 # Sage Data Archive
 
+https://sagecontinuum.org
+
 Archive Creation Timestamp: {creation_timestamp}
 
 ... more text describing data...
