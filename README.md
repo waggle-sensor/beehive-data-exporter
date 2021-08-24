@@ -1,11 +1,16 @@
 # Beehive Data Export Tools
 
-## Exporting SDR Data to CSVs
+## Exporting Data Chunks from SDR
 
-Just run the `export_data_by_measurement.py` tool with a list of dates.
+Just run the `export_data_chunks.py` tool with an optional `-m` measurements filter and start and end dates.
 
 ```sh
-./export_data_by_measurement.py 2021-07-01 2021-07-02 2021-07-03 ...
+# ./export_data_chunks.py -m measurements startdate enddate
+./export_data_chunks.py -m 'iio.*|env.*' 2021-01-01 2021-03-31
 ```
 
-This will download and transform data into `measurements/name/date.csv.gz` files.
+This will download, chunk and index data into `data/` for later compilation. Now you can create a `SAGE-Data.tar` bundle using:
+
+```sh
+./compile_bundle.py
+```
