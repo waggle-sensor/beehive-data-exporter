@@ -14,3 +14,12 @@ This will download, chunk and index data into `data/` for later compilation. Now
 ```sh
 ./compile_bundle.py
 ```
+
+## Measurement Information
+
+Detailed metadata is in the included `variables.ndjson` file. This file is a machine readable list of items
+containing measurement names, descriptions and units. For example:
+
+```
+{"name":"env.raingauge.acc","description":"Rain gauge accumulation mm between measurements.","units":"mm"}
+```
