@@ -27,7 +27,7 @@ class QueryEncoder(json.JSONEncoder):
 
 def get_query_records(query):
     data = json.dumps(query, cls=QueryEncoder).encode()
-    with urlopen("https://sdr.sagecontinuum.org/api/v1/query", data=data) as resp:
+    with urlopen("https://data.sagecontinuum.org/api/v1/query", data=data) as resp:
         return list(map(json.loads, resp))
 
 # Python's time parser doesn't seem to support nanoseconds yet so this is a crude hack
