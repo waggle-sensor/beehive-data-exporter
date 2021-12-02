@@ -59,62 +59,10 @@ def build_data_and_index_files(datadir, workdir):
             f.write("\n")
 
 
-readme_template = """
-# Sage Data Archive
-
-## Overview of Contents
-
-This searchable archive contains data from Sage nodes. It is organized as follows:
-
-* data.ndjson.gz - Data file containing gzipped, newline delimited JSON measurements.
-* index.ndjson - Index file used by query.py to search the data file.
-* nodes.ndjson - Node metadata as newline delimited JSON.
-* ontology.ndjson - Measurement ontology metadata as newline delimited JSON.
-* query.py - Query script for quickly finding relevant data. (See Querying Data section below.)
-
-## Provenance Info
-
-Project URL: https://sagecontinuum.org
-Archive Creation Timestamp: {creation_timestamp}
-
-## Querying Data
-
-Data can be queried with `query.py` by providing a list of meta=pattern search terms. Any meta field may be used as a search parameter.
-
-### Examples
-
-1. Find all data from metsense plugins.
-
-```sh
-./query.py 'plugin=metsense'
-```
-
-2. Find all data from metsense plugins for specific node.
-
-```sh
-./query.py 'plugin=metsense' 'node=000048b02d15bc77'
-```
-
-3. Find all data from for env.* sensors.
-
-```sh
-./query.py 'name=env.*'
-```
-
-4. Find all data from BME680 sensors.
-
-```sh
-./query.py 'sensor=bme680'
-```
-"""
-
-
-def repad(s):
-    return s.strip() + "\n"
-
-
-def write_template(path, template, *args, **kwargs):
-    path.write_text(repad(template.format(*args, **kwargs)))
+def write_template(src, dst, *args, **kwargs):
+    template = Path(src).read_text()
+    output = template.format(*args, **kwargs)
+    dst.write_text(output)
 
 
 def main():
@@ -125,23 +73,18 @@ def main():
     # parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
 
-    creation_timestamp = datetime.now()
+    template_context = {
+        "creation_timestamp": datetime.now(),
+    }
 
     with TemporaryDirectory() as rootdir:
         workdir = Path(rootdir, "SAGE-Data")
         workdir.mkdir(parents=True, exist_ok=True)
-
-        write_template(workdir/"README.md", readme_template, creation_timestamp=creation_timestamp)
+        write_template("templates/README.md", workdir/"README.md", **template_context)
         build_data_and_index_files(args.datadir, workdir)
-
-        # copy query script
-        copyfile("query.py", workdir/"query.py")
-        (workdir/"query.py").chmod(0o755)
-
         download_node_metadata(workdir/"nodes.ndjson")
-
         copyfile("ontology.ndjson", workdir/"ontology.ndjson")
-
+        copyfile("query.py", workdir/"query.py")
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
 
 
