@@ -62,11 +62,20 @@ def build_data_and_index_files(datadir, workdir):
 readme_template = """
 # Sage Data Archive
 
-https://sagecontinuum.org
+## Overview of Contents
 
+This searchable archive contains data from Sage nodes. It is organized as follows:
+
+* data.ndjson.gz - Data file containing gzipped, newline delimited JSON measurements.
+* index.ndjson - Index file used by query.py to search the data file.
+* nodes.ndjson - Node metadata as newline delimited JSON.
+* ontology.ndjson - Measurement ontology metadata as newline delimited JSON.
+* query.py - Query script for quickly finding relevant data. (See Querying Data section below.)
+
+## Provenance Info
+
+Project URL: https://sagecontinuum.org
 Archive Creation Timestamp: {creation_timestamp}
-
-... more text describing data...
 
 ## Querying Data
 
@@ -131,7 +140,7 @@ def main():
 
         download_node_metadata(workdir/"nodes.ndjson")
 
-        copyfile("variables.ndjson", workdir/"variables.ndjson")
+        copyfile("ontology.ndjson", workdir/"ontology.ndjson")
 
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
 
