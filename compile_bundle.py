@@ -2,8 +2,6 @@
 import argparse
 from datetime import datetime
 from pathlib import Path
-import re
-from tarfile import TarFile
 from tempfile import TemporaryDirectory
 import json
 from shutil import copyfile, make_archive
