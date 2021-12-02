@@ -5,6 +5,31 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
 from shutil import copyfile, make_archive
+from urllib.request import urlopen
+
+
+def get_node_metadata():
+    with urlopen("https://api.sagecontinuum.org/production") as f:
+        items = json.load(f)
+
+    # drop items without vsn
+    items = [item for item in items if item["vsn"] != "" and item.get("node_id", "") != ""]
+
+    return [{
+        "vsn": item["vsn"].upper(),
+        "node_id": item["node_id"].lower(),
+        "location": item.get("location", ""),
+        "project": item.get("project", ""),
+    }
+    for item in items
+    if item["vsn"] != "" and item.get("node_id", "") != ""]
+
+
+def download_node_metadata(path):
+    items = get_node_metadata()
+    with open(path, "w") as f:
+        for item in items:
+            print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
 
 
 def build_data_and_index_files(datadir, workdir):
@@ -103,6 +128,8 @@ def main():
         # copy query script
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
+
+        download_node_metadata(workdir/"nodes.ndjson")
 
         copyfile("variables.ndjson", workdir/"variables.ndjson")
 
