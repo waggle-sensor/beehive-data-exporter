@@ -85,6 +85,7 @@ def main():
         download_node_metadata(workdir/"nodes.ndjson")
         copyfile("ontology.ndjson", workdir/"ontology.ndjson")
         copyfile("query.py", workdir/"query.py")
+        (workdir/"query.py").chmod(0o755)
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
 
 
