@@ -42,9 +42,9 @@ Each record may contain additional application specific metadata fields.
 The following is a sample of three records:
 
 ```txt
-{"timestamp":"2021-11-20T08:21:36.534437Z","name":"env.temperature","value":1.38,"meta.host":"000048b02d15bdd2.ws-nxcore","meta.job":"sage","meta.node":"000048b02d15bdd2","meta.plugin":"plugin-iio:0.4.5","meta.sensor":"bme280","meta.task":"iio-nx","meta.vsn":"W02D"}
-{"timestamp":"2021-11-20T08:22:06.590439Z","name":"env.temperature","value":2.27,"meta.host":"000048b02d15bdd2.ws-nxcore","meta.job":"sage","meta.node":"000048b02d15bdd2","meta.plugin":"plugin-iio:0.4.5","meta.sensor":"bme280","meta.task":"iio-nx","meta.vsn":"W02D"}
-{"timestamp":"2021-11-20T08:22:36.642844Z","name":"env.temperature","value":3.09,"meta.host":"000048b02d15bdd2.ws-nxcore","meta.job":"sage","meta.node":"000048b02d15bdd2","meta.plugin":"plugin-iio:0.4.5","meta.sensor":"bme280","meta.task":"iio-nx","meta.vsn":"W02D"}
+{{"timestamp":"2021-11-20T08:21:36.534437Z","name":"env.temperature","value":1.38,"meta.host":"000048b02d15bdd2.ws-nxcore","meta.job":"sage","meta.node":"000048b02d15bdd2","meta.plugin":"plugin-iio:0.4.5","meta.sensor":"bme280","meta.task":"iio-nx","meta.vsn":"W02D"}}
+{{"timestamp":"2021-11-20T08:22:06.590439Z","name":"env.temperature","value":2.27,"meta.host":"000048b02d15bdd2.ws-nxcore","meta.job":"sage","meta.node":"000048b02d15bdd2","meta.plugin":"plugin-iio:0.4.5","meta.sensor":"bme280","meta.task":"iio-nx","meta.vsn":"W02D"}}
+{{"timestamp":"2021-11-20T08:22:36.642844Z","name":"env.temperature","value":3.09,"meta.host":"000048b02d15bdd2.ws-nxcore","meta.job":"sage","meta.node":"000048b02d15bdd2","meta.plugin":"plugin-iio:0.4.5","meta.sensor":"bme280","meta.task":"iio-nx","meta.vsn":"W02D"}}
 ```
 
 ### Examples
