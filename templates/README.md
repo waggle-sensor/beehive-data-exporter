@@ -33,6 +33,7 @@ Each record will also always have the following system provided metadata fields.
 
 * `meta.vsn` - VSN of node which produced record.
 * `meta.node` - Node ID of node which produced record.
+* `meta.host` - Compute device in node which produced record. (nxcore, nxagent, rpi or dellblade)
 * `meta.job` - Job which produced record.
 * `meta.task` - Task which produced record.
 * `meta.plugin` - Plugin which produced record.
