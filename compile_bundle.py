@@ -32,6 +32,14 @@ def download_node_metadata(path):
             print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
 
 
+def download_ontology_metadata(path):
+    with urlopen("https://api.sagecontinuum.org/ontology") as f:
+        items = json.load(f)
+    with open(path, "w") as f:
+        for item in items:
+            print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
+
+
 def build_data_and_index_files(datadir, workdir):
     index = []
 
@@ -83,7 +91,7 @@ def main():
         write_template("templates/README.md", workdir/"README.md", **template_context)
         build_data_and_index_files(args.datadir, workdir)
         download_node_metadata(workdir/"nodes.ndjson")
-        copyfile("ontology.ndjson", workdir/"ontology.ndjson")
+        download_ontology_metadata(workdir/"ontology.ndjson")
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
