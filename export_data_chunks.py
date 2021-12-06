@@ -94,6 +94,7 @@ def main():
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--root", default="data", type=Path, help="root data directory")
     parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
+    parser.add_argument("--exclude", default="^$", help="regexp of measurements to exclude in bundle")
     parser.add_argument("start_date", type=datetype, help="starting date to export")
     parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
@@ -103,15 +104,15 @@ def main():
                         datefmt="%Y/%m/%d %H:%M:%S")
 
     measurementsRE = re.compile(args.measurements)
+    excludeRE = re.compile(args.exclude)
 
     tasks = []
 
     for date in daterange(args.start_date, args.end_date):
         logging.info("processing date %s", date)
         for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
-            if not measurementsRE.match(r["name"]):
+            if not measurementsRE.match(r["name"]) or excludeRE.match(r["name"]):
                 continue
-
             # build filters to be used later
             filters = {}
             filters["name"] = r["name"]
@@ -138,6 +139,7 @@ def main():
                 "index": index,
             }
 
+            logging.info("adding task %s", task)
             tasks.append(task)
 
     for task in tasks:
