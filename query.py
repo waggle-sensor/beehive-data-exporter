@@ -54,3 +54,5 @@ with Path(args.root, "data.ndjson.gz").open("rb") as f:
         f.seek(item["offset"])
         data = f.read(item["size"])
         sys.stdout.write(gzip.decompress(data).decode())
+
+# TODO make this match data API...

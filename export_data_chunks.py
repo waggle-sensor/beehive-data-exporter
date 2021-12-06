@@ -6,7 +6,7 @@ import gzip
 from datetime import datetime, timedelta
 import re
 from pathlib import Path
-import base64
+import logging
 from hashlib import sha1
 
 # NOTE there are some complications with using CSV in this chunked way, unless we want
@@ -91,17 +91,23 @@ def daterange(start, end):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--root", default="data", type=Path, help="root data directory")
     parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
     parser.add_argument("start_date", type=datetype, help="starting date to export")
     parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+                        format="%(asctime)s %(message)s",
+                        datefmt="%Y/%m/%d %H:%M:%S")
+
     measurementsRE = re.compile(args.measurements)
 
     tasks = []
 
     for date in daterange(args.start_date, args.end_date):
+        logging.info("processing date %s", date)
         for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
             if not measurementsRE.match(r["name"]):
                 continue
@@ -135,6 +141,7 @@ def main():
             tasks.append(task)
 
     for task in tasks:
+        logging.info("processing task %s", task)
         process_task(task)
 
 
