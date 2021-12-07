@@ -106,10 +106,12 @@ def main():
     measurementsRE = re.compile(args.measurements)
     excludeRE = re.compile(args.exclude)
 
-    tasks = []
-
     for date in daterange(args.start_date, args.end_date):
         logging.info("processing date %s", date)
+
+        # build task list
+        tasks = []
+
         for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
             if not measurementsRE.match(r["name"]) or excludeRE.match(r["name"]):
                 continue
@@ -133,18 +135,16 @@ def main():
             for k, v in r["meta"].items():
                 query["filter"][k] = v
 
-            task = {
+            tasks.append({
                 "path": Path(args.root, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
                 "query": query,
                 "index": index,
-            }
+            })
 
-            logging.info("adding task %s", task)
-            tasks.append(task)
-
-    for task in tasks:
-        logging.info("processing task %s", task)
-        process_task(task)
+        # process task list
+        for task in tasks:
+            logging.info("processing task %s", task)
+            process_task(task)
 
 
 if __name__ == "__main__":
