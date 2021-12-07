@@ -45,7 +45,7 @@ time ./compile_bundle.py --datadir="${DATA_DIR}"
 echo "uploading bundle"
 
 # NOTE this config is hardcoded for sage+lcrc. we can generalize this later.
-time upload_file SAGE-Data.tar
+time upload_files SAGE-Data.tar
 
 # generate and upload prometheus job metrics to lcrc at:
 # https://web.lcrc.anl.gov/public/waggle/sagedata/metrics.prom
@@ -59,4 +59,4 @@ job_last_success_unixtime{job="sage_data_bundle"} $(date -u +%s)
 job_duration_seconds{job="sage_data_bundle"} $SECONDS
 EOF
 
-time upload_file metrics.prom
+time upload_files metrics.prom
