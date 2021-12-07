@@ -5,6 +5,39 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
 from shutil import copyfile, make_archive
+from urllib.request import urlopen
+
+
+def get_node_metadata():
+    with urlopen("https://api.sagecontinuum.org/production") as f:
+        items = json.load(f)
+
+    # drop items without vsn
+    items = [item for item in items if item["vsn"] != "" and item.get("node_id", "") != ""]
+
+    return [{
+        "vsn": item["vsn"].upper(),
+        "node_id": item["node_id"].lower(),
+        "location": item.get("location", ""),
+        "project": item.get("project", ""),
+    }
+    for item in items
+    if item["vsn"] != "" and item.get("node_id", "") != ""]
+
+
+def download_node_metadata(path):
+    items = get_node_metadata()
+    with open(path, "w") as f:
+        for item in items:
+            print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
+
+
+def download_ontology_metadata(path):
+    with urlopen("https://api.sagecontinuum.org/ontology") as f:
+        items = json.load(f)
+    with open(path, "w") as f:
+        for item in items:
+            print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
 
 
 def build_data_and_index_files(datadir, workdir):
@@ -34,53 +67,10 @@ def build_data_and_index_files(datadir, workdir):
             f.write("\n")
 
 
-readme_template = """
-# Sage Data Archive
-
-https://sagecontinuum.org
-
-Archive Creation Timestamp: {creation_timestamp}
-
-... more text describing data...
-
-## Querying Data
-
-Data can be queried with `query.py` by providing a list of meta=pattern search terms. Any meta field may be used as a search parameter.
-
-### Examples
-
-1. Find all data from metsense plugins.
-
-```sh
-./query.py 'plugin=metsense'
-```
-
-2. Find all data from metsense plugins for specific node.
-
-```sh
-./query.py 'plugin=metsense' 'node=000048b02d15bc77'
-```
-
-3. Find all data from for env.* sensors.
-
-```sh
-./query.py 'name=env.*'
-```
-
-4. Find all data from BME680 sensors.
-
-```sh
-./query.py 'sensor=bme680'
-```
-"""
-
-
-def repad(s):
-    return s.strip() + "\n"
-
-
-def write_template(path, template, *args, **kwargs):
-    path.write_text(repad(template.format(*args, **kwargs)))
+def write_template(src, dst, *args, **kwargs):
+    template = Path(src).read_text()
+    output = template.format(*args, **kwargs)
+    dst.write_text(output)
 
 
 def main():
@@ -91,21 +81,19 @@ def main():
     # parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
 
-    creation_timestamp = datetime.now()
+    template_context = {
+        "creation_timestamp": datetime.now(),
+    }
 
     with TemporaryDirectory() as rootdir:
         workdir = Path(rootdir, "SAGE-Data")
         workdir.mkdir(parents=True, exist_ok=True)
-
-        write_template(workdir/"README.md", readme_template, creation_timestamp=creation_timestamp)
+        write_template("templates/README.md", workdir/"README.md", **template_context)
         build_data_and_index_files(args.datadir, workdir)
-
-        # copy query script
+        download_node_metadata(workdir/"nodes.ndjson")
+        download_ontology_metadata(workdir/"ontology.ndjson")
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
-
-        copyfile("variables.ndjson", workdir/"variables.ndjson")
-
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
 
 

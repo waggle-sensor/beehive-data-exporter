@@ -8,8 +8,7 @@ def main():
     parser.add_argument("output")
     args = parser.parse_args()
 
-    df = (pd
-        .read_csv(args.input, usecols=["ontology", "unit", "units", "description"])
+    (pd.read_csv(args.input, usecols=["ontology", "unit", "units", "description"])
         .rename({
             "ontology": "name",
             "unit": "type",

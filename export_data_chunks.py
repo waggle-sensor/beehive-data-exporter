@@ -6,7 +6,7 @@ import gzip
 from datetime import datetime, timedelta
 import re
 from pathlib import Path
-import base64
+import logging
 from hashlib import sha1
 
 # NOTE there are some complications with using CSV in this chunked way, unless we want
@@ -91,21 +91,30 @@ def daterange(start, end):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", default="data", type=Path, help="root data directory")
+    parser.add_argument("--debug", action="store_true", help="enable debug logging")
+    parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
     parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
+    parser.add_argument("--exclude", default="^$", help="regexp of measurements to exclude in bundle")
     parser.add_argument("start_date", type=datetype, help="starting date to export")
     parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
 
-    measurementsRE = re.compile(args.measurements)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+                        format="%(asctime)s %(message)s",
+                        datefmt="%Y/%m/%d %H:%M:%S")
 
-    tasks = []
+    measurementsRE = re.compile(args.measurements)
+    excludeRE = re.compile(args.exclude)
 
     for date in daterange(args.start_date, args.end_date):
-        for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
-            if not measurementsRE.match(r["name"]):
-                continue
+        logging.info("processing date %s", date)
 
+        # build task list
+        tasks = []
+
+        for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
+            if not measurementsRE.match(r["name"]) or excludeRE.match(r["name"]):
+                continue
             # build filters to be used later
             filters = {}
             filters["name"] = r["name"]
@@ -126,16 +135,16 @@ def main():
             for k, v in r["meta"].items():
                 query["filter"][k] = v
 
-            task = {
-                "path": Path(args.root, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
+            tasks.append({
+                "path": Path(args.datadir, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
                 "query": query,
                 "index": index,
-            }
+            })
 
-            tasks.append(task)
-
-    for task in tasks:
-        process_task(task)
+        # process task list
+        for task in tasks:
+            logging.info("processing task %s", task)
+            process_task(task)
 
 
 if __name__ == "__main__":
