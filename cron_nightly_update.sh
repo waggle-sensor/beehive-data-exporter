@@ -3,7 +3,7 @@
 cd $(dirname $0)
 
 DATA_DIR="${DATA_DIR:-data}"
-UPLOAD_HOST="${UPLOAD_HOST:-bebop.lcrc.anl.gov}"
+UPLOAD_ADDR="${UPLOAD_ADDR:-bebop.lcrc.anl.gov}"
 UPLOAD_USER="${UPLOAD_USER:-svcwagglersync}"
 UPLOAD_KEY="${UPLOAD_KEY:-~/.ssh/lcrc}"
 UPLOAD_DIR="${UPLOAD_DIR:-/home/svcwagglersync/waggle/public_html/sagedata/}"
