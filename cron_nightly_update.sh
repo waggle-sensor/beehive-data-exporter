@@ -55,7 +55,7 @@ EOF
 upload_data_bundle() {
     echo "uploading bundle"
     upload_files SAGE-Data.tar
-    
+
     write_metrics metrics.prom
     echo "uploading metrics"
     upload_files metrics.prom
