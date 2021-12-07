@@ -92,7 +92,7 @@ def daterange(start, end):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
-    parser.add_argument("--root", default="data", type=Path, help="root data directory")
+    parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
     parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
     parser.add_argument("--exclude", default="^$", help="regexp of measurements to exclude in bundle")
     parser.add_argument("start_date", type=datetype, help="starting date to export")
@@ -136,7 +136,7 @@ def main():
                 query["filter"][k] = v
 
             tasks.append({
-                "path": Path(args.root, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
+                "path": Path(args.datadir, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
                 "query": query,
                 "index": index,
             })
