@@ -15,7 +15,7 @@ def get_node_metadata():
     # drop items without vsn
     items = [item for item in items if item["vsn"] != "" and item.get("node_id", "") != ""]
     for item in items:
-        item["vsn"] = item["vsn"].lower()
+        item["vsn"] = item["vsn"].upper()
         item["node_id"] = item["node_id"].lower()
     return items
 
@@ -27,12 +27,41 @@ def download_node_metadata(path):
             print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
 
 
+def write_human_readable_nodes_file(src, dst):
+    with open(src) as infile, open(dst, "w") as outfile:
+        print("# Node Metadata", file=outfile)
+        print(file=outfile)
+        for r in map(json.loads, infile):
+            print(f"VSN: {r.get('vsn', '')}", file=outfile)
+            print(f"Project: {r.get('project', '')}", file=outfile)
+            print(f"Location: {r.get('location', '')}", file=outfile)
+            print(f"Node Type: {r.get('node_type', '')}", file=outfile)
+            print(f"Has Shield: {r.get('shield', '') is True}", file=outfile)
+            print(f"Has Agent: {r.get('nx_agent', '') is True}", file=outfile)
+            print(f"Build Date: {r.get('build_date', '')}", file=outfile)
+            print(file=outfile)
+
+
 def download_ontology_metadata(path):
     with urlopen("https://api.sagecontinuum.org/ontology") as f:
         items = json.load(f)
     with open(path, "w") as f:
         for item in items:
             print(json.dumps(item, sort_keys=True, separators=(",", ":")), file=f)
+
+
+def write_human_readable_ontology_file(src, dst):
+    with open(src) as infile, open(dst, "w") as outfile:
+        print("# Ontology Metadata", file=outfile)
+        print(file=outfile)
+        for r in map(json.loads, infile):
+            if r.get('ontology') is None:
+                continue
+            print(f"Name: {r.get('ontology', '')}", file=outfile)
+            print(f"Description: {r.get('description', '')}", file=outfile)
+            print(f"Type: {r.get('unit', '')}", file=outfile)
+            print(f"Units: {r.get('units', '')}", file=outfile)
+            print(file=outfile)
 
 
 def build_data_and_index_files(datadir, workdir):
@@ -86,7 +115,9 @@ def main():
         write_template("templates/README.md", workdir/"README.md", **template_context)
         build_data_and_index_files(args.datadir, workdir)
         download_node_metadata(workdir/"nodes.ndjson")
+        write_human_readable_nodes_file(workdir/"nodes.ndjson", workdir/"nodes.md")
         download_ontology_metadata(workdir/"ontology.ndjson")
+        write_human_readable_ontology_file(workdir/"ontology.ndjson", workdir/"ontology.md")
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
         make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
