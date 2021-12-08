@@ -14,15 +14,10 @@ def get_node_metadata():
 
     # drop items without vsn
     items = [item for item in items if item["vsn"] != "" and item.get("node_id", "") != ""]
-
-    return [{
-        "vsn": item["vsn"].upper(),
-        "node_id": item["node_id"].lower(),
-        "location": item.get("location", ""),
-        "project": item.get("project", ""),
-    }
-    for item in items
-    if item["vsn"] != "" and item.get("node_id", "") != ""]
+    for item in items:
+        item["vsn"] = item["vsn"].lower()
+        item["node_id"] = item["node_id"].lower()
+    return items
 
 
 def download_node_metadata(path):
