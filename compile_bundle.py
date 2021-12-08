@@ -110,7 +110,7 @@ def main():
     }
 
     with TemporaryDirectory() as rootdir:
-        workdir = Path(rootdir, "SAGE-Data")
+        workdir = Path(rootdir, datetime.now().strftime("SAGE-Data.%Y-%m-%d"))
         workdir.mkdir(parents=True, exist_ok=True)
         write_template("templates/README.md", workdir/"README.md", **template_context)
         build_data_and_index_files(args.datadir, workdir)
