@@ -13,8 +13,7 @@ def fatal(msg):
 
 
 def read_index_file(path):
-    data = Path(path).read_text()
-    return list(map(json.loads, data.splitlines()))
+    return json.loads(Path(path).read_text())
 
 
 def build_query_patterns(query):
@@ -38,7 +37,7 @@ args = parser.parse_args()
 patterns = build_query_patterns(args.query)
 
 try:
-    index = read_index_file(Path(args.root, "index.ndjson"))
+    index = read_index_file(Path(args.root, "index.json"))
 except FileNotFoundError:
     fatal("no index.json file in data folder")
 except json.JSONDecodeError:

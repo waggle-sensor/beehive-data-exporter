@@ -5,12 +5,12 @@
 This searchable archive contains data from Sage nodes. It is organized as follows:
 
 * data.ndjson.gz - Data file containing gzipped, newline delimited JSON measurements.
-* index.ndjson - Index file used by query.py to search the data file.
-* nodes.ndjson - Node metadata as newline delimited JSON.
+* query.py - Query script for seaching data. (See Querying Data section below.)
+* index.json - Machine readable index file used by query script.
 * nodes.md - Human readable version of node metadata.
-* ontology.ndjson - Measurement ontology metadata as newline delimited JSON.
+* nodes.json - Machine readable node metadata.
 * ontology.md - Human readable version of ontology metadata.
-* query.py - Query script for quickly finding relevant data. (See Querying Data section below.)
+* ontology.json - Machine readable ontology metadata.
 
 ## Provenance Info
 
