@@ -25,7 +25,7 @@ export_data_chunks() {
 
 compile_data_bundle() {
     echo "compiling bundle"
-    ./compile_bundle.py --datadir="${DATA_DIR}" --project=SAGE SAGE-Data
+    ./compile_bundle.py --datadir="${DATA_DIR}" --exclude 'sys.*' --project=SAGE SAGE-Data
 }
 
 upload_files() {

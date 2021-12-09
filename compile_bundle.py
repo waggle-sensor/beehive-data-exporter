@@ -28,6 +28,9 @@ def clean_nodes(items):
             **item,
             "vsn": item["vsn"].upper(),
             "node_id": item["node_id"].lower(),
+            "project": item.get("project") or "",
+            "commission_date": item.get("commission_date") or "",
+            "retire_date": item.get("retire_date") or "",
         }
     return [clean_item(item) for item in items if valid_item(item)]
 
@@ -38,9 +41,9 @@ def clean_ontology(items):
     def clean_item(item):
         return {
             **item,
-            "description": item.get("description", ""),
-            "unit": item.get("unit", ""),
-            "units": item.get("units", ""),
+            "description": item.get("description") or "",
+            "unit": item.get("unit") or "",
+            "units": item.get("units") or "",
         }
     return [clean_item(item) for item in items if valid_item(item)]
 
@@ -122,6 +125,8 @@ def main():
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
     parser.add_argument("--ontology", default="", type=re.compile, help="regexp of ontology to include in bundle")
+    # TODO name this something more clear
+    parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of ontology to exclude in bundle")
     parser.add_argument("--project", default="", type=re.compile, help="regexp of projects to include in bundle")
     parser.add_argument("bundle_name", help="name of output bundle")
     args = parser.parse_args()
@@ -174,7 +179,8 @@ def main():
                 return False
             commission_date = parse_optional_date(node.get("commission_date"))
             retire_date = parse_optional_date(node.get("retire_date"))
-            return ((args.ontology.search(key["name"]) is not None) and
+            return ((args.ontology.match(key["name"]) is not None) and
+                    (args.exclude.match(key["name"]) is None) and
                     (commission_date is not None and commission_date <= date) and
                     (retire_date is None or date <= retire_date))
 
