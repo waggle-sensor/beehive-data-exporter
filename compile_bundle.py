@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 import json
 from shutil import copyfile, make_archive
 from urllib.request import urlopen
+import re
 
 
 def read_json_from_url(url):
@@ -69,17 +70,22 @@ Units: {units}
 """.format(**item), file=outfile)
 
 
-def build_data_and_index_files(datadir, workdir):
+def build_data_and_index_files(datadir, workdir, publish_filter):
     index = []
 
     files = sorted(datadir.glob("**/*.ndjson.gz"))
 
     with (workdir/"data.ndjson.gz").open("wb") as f:
         for file in files:
-            # read file data
-            data = file.read_bytes()
             # read file index data
             key = json.loads(file.with_name(f"{file.name}.index").read_text())
+            # only include items matched by the publish filter
+            if not publish_filter(key):
+                logging.debug("skip key %s", key)
+                continue
+            logging.debug("add key %s", key)
+            # read file data
+            data = file.read_bytes()
             # track offset and append to data chunk
             offset = f.tell()
             size = f.write(data)
@@ -99,15 +105,26 @@ def write_template(src, dst, *args, **kwargs):
     dst.write_text(output)
 
 
+def parse_optional_date(s):
+    if s is None or s == "":
+        return None
+    return parse_date(s)
+
+
+def parse_date(s):
+    return datetime.strptime(s, "%Y-%m-%d")
+
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
-    parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
-    # parser.add_argument("start_date", type=datetype, help="starting date to export")
-    # parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
+    parser.add_argument("--ontology", default="", type=re.compile, help="regexp of ontology to include in bundle")
+    parser.add_argument("--project", default="", type=re.compile, help="regexp of projects to include in bundle")
+    parser.add_argument("bundle_name", help="name of output bundle")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
         format="%(asctime)s %(message)s",
         datefmt="%Y/%m/%d %H:%M:%S")
 
@@ -118,8 +135,8 @@ def main():
     with TemporaryDirectory() as rootdir:
         logging.info("populating new archive")
 
-        # put items under SAGE-Data.date subdir to help avoid prevent untarring over existing data
-        workdir = Path(rootdir, datetime.now().strftime("SAGE-Data.%Y-%m-%d"))
+        # put items under .date subdir to help avoid prevent untarring over existing data
+        workdir = Path(rootdir, args.bundle_name + datetime.now().strftime(".%Y-%m-%d"))
         workdir.mkdir(parents=True, exist_ok=True)
 
         logging.info("adding README")
@@ -127,9 +144,11 @@ def main():
         
         logging.info("adding node metadata")
         nodes = clean_nodes(read_json_from_url("https://api.sagecontinuum.org/production"))
+        # only include nodes which are part of project
+        nodes = [node for node in nodes if args.project.search(node["project"])]
         write_json_file(workdir/"nodes.json", nodes)
         write_human_readable_node_file(workdir/"nodes.md", nodes)
-        
+
         logging.info("adding ontology metadata")
         ontology = clean_ontology(read_json_from_url("https://api.sagecontinuum.org/ontology"))
         write_json_file(workdir/"ontology.json", ontology)
@@ -139,11 +158,27 @@ def main():
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
 
+        # build publish filter
+        nodes_by_vsn = {node["vsn"]: node for node in nodes}
+
+        def publish_filter(key):
+            # TODO decide what to do about invalid dates
+            date = parse_date(key["date"])
+            try:
+                node = nodes_by_vsn[key["vsn"]]
+            except KeyError:
+                return False
+            commission_date = parse_optional_date(node.get("commission_date"))
+            retire_date = parse_optional_date(node.get("retire_date"))
+            return ((args.ontology.search(key["name"]) is not None) and
+                    (commission_date is not None and commission_date <= date) and
+                    (retire_date is None or date <= retire_date))
+
         logging.info("adding data and index")
-        build_data_and_index_files(args.datadir, workdir)
+        build_data_and_index_files(args.datadir, workdir, publish_filter)
 
         logging.info("creating tar file")
-        make_archive("SAGE-Data", "tar", rootdir, workdir.relative_to(rootdir))
+        make_archive(args.bundle_name, "tar", rootdir, workdir.relative_to(rootdir))
 
         logging.info("done")
 
