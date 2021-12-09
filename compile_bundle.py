@@ -56,6 +56,8 @@ Node Type: {node_type}
 Has Shield: {shield}
 Has Agent: {nx_agent}
 Build Date: {build_date}
+Commission Date: {commission_date}
+Retire Date: {retire_date}
 """.format(**item), file=outfile)
 
 
