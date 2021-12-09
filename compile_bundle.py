@@ -133,7 +133,7 @@ def main():
     }
 
     with TemporaryDirectory() as rootdir:
-        logging.info("populating new archive")
+        logging.info("populating new %s bundle", args.bundle_name)
 
         # put items under .date subdir to help avoid prevent untarring over existing data
         workdir = Path(rootdir, args.bundle_name + datetime.now().strftime(".%Y-%m-%d"))
@@ -161,6 +161,8 @@ def main():
         # build publish filter
         nodes_by_vsn = {node["vsn"]: node for node in nodes}
 
+        # publish_filter will returns whether a given data chunk key should
+        # be included in the bundle
         def publish_filter(key):
             # TODO decide what to do about invalid dates
             date = parse_date(key["date"])
@@ -180,7 +182,7 @@ def main():
         logging.info("creating tar file")
         make_archive(args.bundle_name, "tar", rootdir, workdir.relative_to(rootdir))
 
-        logging.info("done")
+        logging.info("finished creating %s bundle", args.bundle_name)
 
 
 if __name__ == "__main__":
