@@ -152,7 +152,7 @@ def main():
         logging.info("adding node metadata")
         nodes = clean_nodes(read_json_from_url("https://api.sagecontinuum.org/production"))
         # only include nodes which are part of project
-        nodes = [node for node in nodes if args.project.search(node["project"])]
+        nodes = [node for node in nodes if args.project.match(node["project"])]
         write_json_file(workdir/"nodes.json", nodes)
         write_human_readable_node_file(workdir/"nodes.md", nodes)
 
