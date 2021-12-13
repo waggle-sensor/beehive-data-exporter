@@ -3,6 +3,7 @@
 cd $(dirname $0)
 
 DATA_DIR="${DATA_DIR:-data}"
+DATA_START_DATE="${DATA_START_DATE:-2021-06-01}"
 UPLOAD_ADDR="${UPLOAD_ADDR:-bebop.lcrc.anl.gov}"
 UPLOAD_USER="${UPLOAD_USER:-svcwagglersync}"
 UPLOAD_KEY="${UPLOAD_KEY:-~/.ssh/lcrc}"
@@ -14,13 +15,20 @@ echo "UPLOAD_USER=${UPLOAD_USER}"
 echo "UPLOAD_KEY=${UPLOAD_KEY}"
 echo "UPLOAD_DIR=${UPLOAD_DIR}"
 
+date_n_days_ago() {
+    date -d "${1} days ago" +"%Y-%m-%d"
+}
+
 export_data_chunks() {
     echo "exporting data chunks"
-    # ensure last few days of data chunks are exported in case new data has arrived
-    start=$(date -d '4 days ago' +'%Y-%m-%d')
-    # end only goes until the last *completed* day so we don't include partial data
-    end=$(date -d '1 day ago' +'%Y-%m-%d')
-    ./export_data_chunks.py --datadir="${DATA_DIR}" --exclude "^sys.*" "${start}" "${end}"
+
+    # clear date.done flags for last few days to ensure that delayed data is included
+    for n in $(seq 1 3); do
+        d=$(date_n_days_ago "${n}")
+        rm "${DATA_DIR}/${d}.done" &> /dev/null || true
+    done
+
+    ./export_data_chunks.py --datadir="${DATA_DIR}" --exclude "^sys.*" "${DATA_START_DATE}" "$(date_n_days_ago 1)"
 }
 
 compile_data_bundle() {
