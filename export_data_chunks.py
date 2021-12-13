@@ -107,6 +107,12 @@ def main():
     excludeRE = re.compile(args.exclude)
 
     for date in daterange(args.start_date, args.end_date):
+        donefile = args.datadir / f"{date.date()}.done"
+
+        if donefile.exists():
+            logging.debug("already processed date %s", date)
+            continue
+
         logging.info("processing date %s", date)
 
         # build task list
@@ -145,6 +151,8 @@ def main():
         for task in tasks:
             logging.info("processing task %s", task)
             process_task(task)
+
+        donefile.write_text("")
 
 
 if __name__ == "__main__":
