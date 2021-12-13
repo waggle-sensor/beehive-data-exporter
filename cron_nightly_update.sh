@@ -10,6 +10,7 @@ UPLOAD_KEY="${UPLOAD_KEY:-~/.ssh/lcrc}"
 UPLOAD_DIR="${UPLOAD_DIR:-/home/svcwagglersync/waggle/public_html/sagedata/}"
 
 echo "DATA_DIR=${DATA_DIR}"
+echo "DATA_START_DATE=${DATA_START_DATE}"
 echo "UPLOAD_ADDR=${UPLOAD_ADDR}"
 echo "UPLOAD_USER=${UPLOAD_USER}"
 echo "UPLOAD_KEY=${UPLOAD_KEY}"
