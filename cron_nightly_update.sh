@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -e -u
 
 cd $(dirname $0)
 
