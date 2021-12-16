@@ -52,26 +52,20 @@ The following is a sample of three records:
 
 ### Examples
 
-1. Find all data from metsense plugins.
-
-```sh
-./query.py 'plugin=metsense'
-```
-
-2. Find all data from metsense plugins for specific node.
-
-```sh
-./query.py 'plugin=metsense' 'node=000048b02d15bc77'
-```
-
-3. Find all data from for env.* sensors.
+1. Find all data from for env.* sensors.
 
 ```sh
 ./query.py 'name=env.*'
 ```
 
-4. Find all data from BME680 sensors.
+2. Find all data from BME680 sensors.
 
 ```sh
 ./query.py 'sensor=bme680'
+```
+
+3. Find all data from raingauge task.
+
+```sh
+./query.py 'task=raingauge'
 ```
