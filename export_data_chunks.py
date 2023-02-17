@@ -8,6 +8,9 @@ import re
 from pathlib import Path
 import logging
 from hashlib import sha1
+from http import HTTPStatus
+from urllib.error import HTTPError
+import time
 
 # NOTE there are some complications with using CSV in this chunked way, unless we want
 # to maintain a fixed global metadata list of what can be included
@@ -30,6 +33,18 @@ def get_query_records(query):
     with urlopen("https://data.sagecontinuum.org/api/v1/query", data=data) as resp:
         return list(map(json.loads, resp))
 
+
+def get_query_records_with_retry(query):
+    while True:
+        try:
+            return get_query_records(query)
+        except HTTPError as e:
+            if e.code == HTTPStatus.TOO_MANY_REQUESTS:
+                time.sleep(0.2)
+            else:
+                raise
+
+
 # Python's time parser doesn't seem to support nanoseconds yet so this is a crude hack
 # to round down to microseconds. We simply trucate to the first 26 characters like this:
 # 2021-01-03T10:32:20.123456789Z ->
@@ -45,7 +60,7 @@ def round_down_to_microseconds(s):
 
 def process_task(task):
     download_start_time = datetime.now()
-    records = get_query_records(task["query"])
+    records = get_query_records_with_retry(task["query"])
     download_duration = datetime.now() - download_start_time
 
     write_start_time = datetime.now()
@@ -107,7 +122,7 @@ def main():
     excludeRE = re.compile(args.exclude)
 
     for date in daterange(args.start_date, args.end_date):
-        donefile = args.datadir / f"{date.date()}.done"
+        donefile = Path(args.datadir, f"{date.date()}.done")
 
         if donefile.exists():
             logging.debug("already processed date %s", date)
@@ -118,8 +133,10 @@ def main():
         # build task list
         tasks = []
 
-        for r in get_query_records({"start": date, "end": date + timedelta(days=1), "tail": 1}):
-            if not measurementsRE.match(r["name"]) or excludeRE.match(r["name"]):
+        for r in get_query_records_with_retry({"start": date, "end": date + timedelta(days=1), "tail": 1}):
+            if excludeRE.match(r["name"]):
+                continue
+            if not measurementsRE.match(r["name"]):
                 continue
             # build filters to be used later
             filters = {}
@@ -152,7 +169,8 @@ def main():
             logging.info("processing task %s", task)
             process_task(task)
 
-        donefile.write_text("")
+        donefile.parent.mkdir(parents=True, exist_ok=True)
+        donefile.touch()
 
 
 if __name__ == "__main__":
