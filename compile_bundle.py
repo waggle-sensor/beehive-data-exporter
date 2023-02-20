@@ -124,9 +124,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
-    parser.add_argument("--ontology", default="", type=re.compile, help="regexp of ontology to include in bundle")
-    # TODO name this something more clear
-    parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of ontology to exclude in bundle")
+    parser.add_argument("--include", default="", type=re.compile, help="regexp of ontology to include in bundle")
+    parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of ontology to exclude from bundle")
     parser.add_argument("--project", default="", type=re.compile, help="regexp of projects to include in bundle")
     parser.add_argument("bundle_name", help="name of output bundle")
     args = parser.parse_args()
@@ -148,7 +147,7 @@ def main():
 
         logging.info("adding README")
         write_template("templates/README.md", workdir/"README.md", **template_context)
-        
+
         logging.info("adding node metadata")
         nodes = clean_nodes(read_json_from_url("https://api.sagecontinuum.org/production"))
         # only include nodes which are part of project
@@ -160,7 +159,7 @@ def main():
         ontology = clean_ontology(read_json_from_url("https://api.sagecontinuum.org/ontology"))
         write_json_file(workdir/"ontology.json", ontology)
         write_human_readable_ontology_file(workdir/"ontology.md", ontology)
-        
+
         logging.info("adding query executable")
         copyfile("query.py", workdir/"query.py")
         (workdir/"query.py").chmod(0o755)
@@ -179,7 +178,7 @@ def main():
                 return False
             commission_date = parse_optional_date(node.get("commission_date"))
             retire_date = parse_optional_date(node.get("retire_date"))
-            return ((args.ontology.match(key["name"]) is not None) and
+            return ((args.include.match(key["name"]) is not None) and
                     (args.exclude.match(key["name"]) is None) and
                     (commission_date is not None and commission_date <= date) and
                     (retire_date is None or date <= retire_date))

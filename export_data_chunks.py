@@ -108,8 +108,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
-    parser.add_argument("-m", "--measurements", default="", help="regexp of measurements to include in bundle")
-    parser.add_argument("--exclude", default="^$", help="regexp of measurements to exclude in bundle")
+    parser.add_argument("--include", default="", help="regexp of measurements to include in bundle")
+    parser.add_argument("--exclude", default="^$", help="regexp of measurements to exclude from bundle")
     parser.add_argument("start_date", type=datetype, help="starting date to export")
     parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
     args = parser.parse_args()
@@ -118,7 +118,7 @@ def main():
                         format="%(asctime)s %(message)s",
                         datefmt="%Y/%m/%d %H:%M:%S")
 
-    measurementsRE = re.compile(args.measurements)
+    includeRE = re.compile(args.include)
     excludeRE = re.compile(args.exclude)
 
     for date in daterange(args.start_date, args.end_date):
@@ -136,7 +136,7 @@ def main():
         for r in get_query_records_with_retry({"start": date, "end": date + timedelta(days=1), "tail": 1}):
             if excludeRE.match(r["name"]):
                 continue
-            if not measurementsRE.match(r["name"]):
+            if not includeRE.match(r["name"]):
                 continue
             # build filters to be used later
             filters = {}
