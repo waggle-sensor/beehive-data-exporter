@@ -8,6 +8,7 @@ UPLOAD_ADDR="${UPLOAD_ADDR:-bebop.lcrc.anl.gov}"
 UPLOAD_USER="${UPLOAD_USER:-svcwagglersync}"
 UPLOAD_KEY="${UPLOAD_KEY:-~/.ssh/lcrc}"
 UPLOAD_DIR="${UPLOAD_DIR:-/home/svcwagglersync/waggle/public_html/sagedata/}"
+PROJECTS="${UPLOAD_DIR:-SAGE}"
 
 echo "DATA_DIR=${DATA_DIR}"
 echo "DATA_START_DATE=${DATA_START_DATE}"
@@ -15,6 +16,7 @@ echo "UPLOAD_ADDR=${UPLOAD_ADDR}"
 echo "UPLOAD_USER=${UPLOAD_USER}"
 echo "UPLOAD_KEY=${UPLOAD_KEY}"
 echo "UPLOAD_DIR=${UPLOAD_DIR}"
+echo "PROJECTS=${PROJECTS}"
 
 date_n_days_ago() {
     date -d "${1} days ago" +"%Y-%m-%d"
@@ -33,8 +35,11 @@ export_data_chunks() {
 }
 
 compile_data_bundle() {
-    echo "compiling bundle"
-    ./compile_bundle.py --datadir="${DATA_DIR}" --exclude 'sys.*' --project=SAGE SAGE-Data
+    for project in $PROJECTS; do
+        echo "compiling bundles for ${project}"
+        ./compile_bundle.py --datadir="${DATA_DIR}" --exclude 'sys.*' "--project=${project}" "${project}-Science-Data"
+        ./compile_bundle.py --datadir="${DATA_DIR}" --include 'sys.*' "--project=${project}" "${project}-System-Data"
+    done
 }
 
 upload_files() {
