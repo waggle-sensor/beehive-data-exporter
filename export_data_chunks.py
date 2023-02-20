@@ -11,6 +11,7 @@ from hashlib import sha1
 from http import HTTPStatus
 from urllib.error import HTTPError
 import time
+import os
 
 # NOTE there are some complications with using CSV in this chunked way, unless we want
 # to maintain a fixed global metadata list of what can be included
@@ -19,6 +20,8 @@ import time
 #     "plugin",
 #     "camera"
 # ]
+
+DATA_QUERY_API_URL = os.getenv("DATA_QUERY_API_URL", "https://data.sagecontinuum.org/api/v1/query")
 
 class QueryEncoder(json.JSONEncoder):
     
@@ -30,7 +33,7 @@ class QueryEncoder(json.JSONEncoder):
 
 def get_query_records(query):
     data = json.dumps(query, cls=QueryEncoder).encode()
-    with urlopen("https://data.sagecontinuum.org/api/v1/query", data=data) as resp:
+    with urlopen(DATA_QUERY_API_URL, data=data) as resp:
         return list(map(json.loads, resp))
 
 
