@@ -69,7 +69,7 @@ EOF
 
 upload_data_bundle() {
     for project in $PROJECTS; do
-        upload_files "${project}-Science-Data" "${project}-System-Data"
+        upload_files "${project}-Science-Data.tar" "${project}-System-Data.tar"
     done
 
     write_metrics metrics.prom
