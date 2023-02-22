@@ -44,6 +44,7 @@ compile_data_bundle() {
 
 upload_files() {
     for filename in $*; do
+        echo "uploading file ${filename}"
         rsync \
             --verbose \
             --archive \
@@ -67,8 +68,9 @@ EOF
 }
 
 upload_data_bundle() {
-    echo "uploading bundle"
-    upload_files SAGE-Data.tar
+    for project in $PROJECTS; do
+        upload_files "${project}-Science-Data" "${project}-System-Data"
+    done
 
     write_metrics metrics.prom
     echo "uploading metrics"
