@@ -31,14 +31,14 @@ export_data_chunks() {
         rm "${DATA_DIR}/${d}.done" &> /dev/null || true
     done
 
-    ./export_data_chunks.py --datadir="${DATA_DIR}" --exclude "^sys.*" "${DATA_START_DATE}" "$(date_n_days_ago 1)"
+    ./export_data_chunks.py --datadir="${DATA_DIR}" "${DATA_START_DATE}" "$(date_n_days_ago 1)"
 }
 
 compile_data_bundle() {
     for project in $PROJECTS; do
         echo "compiling bundles for ${project}"
-        ./compile_bundle.py --datadir="${DATA_DIR}" --exclude 'sys.*' "--project=${project}" "${project}-Science-Data"
-        ./compile_bundle.py --datadir="${DATA_DIR}" --include 'sys.*' "--project=${project}" "${project}-System-Data"
+        ./compile_bundle.py --datadir="${DATA_DIR}" --exclude '^sys.*' "--project=${project}" "${project}-Science-Data"
+        ./compile_bundle.py --datadir="${DATA_DIR}" --include '^sys.*' "--project=${project}" "${project}-System-Data"
     done
 }
 
