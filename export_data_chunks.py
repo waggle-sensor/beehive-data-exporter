@@ -24,7 +24,7 @@ DATA_QUERY_API_URL = os.getenv("DATA_QUERY_API_URL", "https://data.sagecontinuum
 
 
 class DatetimeEncoder(json.JSONEncoder):
-    
+
     def default(self, obj):
         if isinstance(obj, datetime):
              return obj.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -68,13 +68,6 @@ def round_down_to_microseconds(s):
 def process_task(task: Task):
     outfile = task.path
     outfile.parent.mkdir(parents=True, exist_ok=True)
-
-    if outfile.exists():
-        return {
-            "task": task,
-            "download_duration": None,
-            "write_duration": None,
-        }
 
     # download results from data api
     download_start_time = datetime.now()
@@ -181,8 +174,14 @@ def main():
             for k, v in r["meta"].items():
                 query["filter"][k] = v
 
+            path = Path(args.datadir, year, month, day, r["name"], r["meta"]["vsn"], chunk_id, "data.ndjson.gz")
+
+            # skip task if data file has already been created
+            if path.exists():
+                continue
+
             tasks.append(Task(
-                path=Path(args.datadir, year, month, day, r["name"], r["meta"]["vsn"], chunk_id, "data.ndjson.gz"),
+                path=path,
                 query=query,
                 index=index,
             ))
