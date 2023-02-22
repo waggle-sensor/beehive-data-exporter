@@ -66,14 +66,23 @@ def round_down_to_microseconds(s):
 
 
 def process_task(task: Task):
+    outfile = task.path
+    outfile.parent.mkdir(parents=True, exist_ok=True)
+
+    if outfile.exists():
+        return {
+            "task": task,
+            "download_duration": None,
+            "write_duration": None,
+        }
+
+    # download results from data api
     download_start_time = datetime.now()
     records = get_query_records_with_retry(task.query)
     download_duration = datetime.now() - download_start_time
 
+    # write results
     write_start_time = datetime.now()
-
-    outfile = task.path
-    outfile.parent.mkdir(parents=True, exist_ok=True)
     tmpfile = outfile.with_suffix(".tmp")
 
     with gzip.open(tmpfile, "wt") as f:
