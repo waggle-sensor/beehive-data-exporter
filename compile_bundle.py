@@ -78,12 +78,16 @@ Units: {units}
 def build_data_and_index_files(datadir, workdir, publish_filter):
     index = []
 
-    files = sorted(datadir.glob("**/*.ndjson.gz"))
+    files = sorted(datadir.glob("**/data.ndjson.gz"))
 
     with (workdir/"data.ndjson.gz").open("wb") as f:
         for file in files:
             # read file index data
-            key = json.loads(file.with_name(f"{file.name}.index").read_text())
+            key = json.loads(file.with_name("index.json").read_text())
+
+            # read query metadata
+            query = json.loads(file.with_name("query.json").read_text())
+
             # only include items matched by the publish filter
             if not publish_filter(key):
                 logging.debug("skip key %s", key)
@@ -97,6 +101,7 @@ def build_data_and_index_files(datadir, workdir, publish_filter):
 
             index.append({
                 "key": key,
+                "query": query,
                 "offset": offset,
                 "size": size,
             })

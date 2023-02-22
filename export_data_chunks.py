@@ -12,18 +12,18 @@ from http import HTTPStatus
 from urllib.error import HTTPError
 import time
 import os
+from typing import NamedTuple
 
-# NOTE there are some complications with using CSV in this chunked way, unless we want
-# to maintain a fixed global metadata list of what can be included
-# metadata_schema = [
-#     "node",
-#     "plugin",
-#     "camera"
-# ]
+class Task(NamedTuple):
+    path: Path
+    query: dict
+    index: str
+
 
 DATA_QUERY_API_URL = os.getenv("DATA_QUERY_API_URL", "https://data.sagecontinuum.org/api/v1/query")
 
-class QueryEncoder(json.JSONEncoder):
+
+class DatetimeEncoder(json.JSONEncoder):
     
     def default(self, obj):
         if isinstance(obj, datetime):
@@ -31,8 +31,12 @@ class QueryEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+def dump_json_normalized(obj):
+    return json.dumps(obj, separators=(",", ":"), sort_keys=True, cls=DatetimeEncoder)
+
+
 def get_query_records(query):
-    data = json.dumps(query, cls=QueryEncoder).encode()
+    data = dump_json_normalized(query).encode()
     with urlopen(DATA_QUERY_API_URL, data=data) as resp:
         return list(map(json.loads, resp))
 
@@ -61,14 +65,14 @@ def round_down_to_microseconds(s):
     return s
 
 
-def process_task(task):
+def process_task(task: Task):
     download_start_time = datetime.now()
-    records = get_query_records_with_retry(task["query"])
+    records = get_query_records_with_retry(task.query)
     download_duration = datetime.now() - download_start_time
 
     write_start_time = datetime.now()
 
-    outfile = task["path"]
+    outfile = task.path
     outfile.parent.mkdir(parents=True, exist_ok=True)
     tmpfile = outfile.with_suffix(".tmp")
 
@@ -79,16 +83,19 @@ def process_task(task):
                 r[f"meta.{k}"] = v
             del r["meta"]
             r["timestamp"] = round_down_to_microseconds(r["timestamp"])
-            print(json.dumps(r, separators=(",", ":")), file=f)
+            print(dump_json_normalized(r), file=f)
 
     tmpfile.rename(outfile)
 
     write_duration = datetime.now() - write_start_time
 
     # TODO write to index tempfile?
-    indexfile = outfile.with_name(f"{outfile.name}.index")
-    indexfile.write_text(task["index"])
-    
+    indexfile = outfile.with_name("index.json")
+    indexfile.write_text(task.index)
+
+    queryfile = outfile.with_name("query.json")
+    queryfile.write_text(dump_json_normalized(task.query))
+
     return {
         "task": task,
         "download_duration": str(download_duration),
@@ -125,7 +132,11 @@ def main():
     excludeRE = re.compile(args.exclude)
 
     for date in daterange(args.start_date, args.end_date):
-        donefile = Path(args.datadir, f"{date.date()}.done")
+        year = date.strftime("%Y")
+        month = date.strftime("%m")
+        day = date.strftime("%d")
+
+        donefile = Path(args.datadir, year, month, day, ".done")
 
         if donefile.exists():
             logging.debug("already processed date %s", date)
@@ -147,7 +158,7 @@ def main():
             filters["date"] = date.strftime("%Y-%m-%d")
             for k, v in r["meta"].items():
                 filters[k] = v
-            index = json.dumps(filters, separators=(",", ":"), sort_keys=True)
+            index = dump_json_normalized(filters)
             chunk_id = sha1(index.encode()).hexdigest()
 
             query = {
@@ -161,11 +172,11 @@ def main():
             for k, v in r["meta"].items():
                 query["filter"][k] = v
 
-            tasks.append({
-                "path": Path(args.datadir, date.strftime("%Y-%m-%d"), r["name"], r["meta"]["node"], f"{chunk_id}.ndjson.gz"),
-                "query": query,
-                "index": index,
-            })
+            tasks.append(Task(
+                path=Path(args.datadir, year, month, day, r["name"], r["meta"]["vsn"], chunk_id, "data.ndjson.gz"),
+                query=query,
+                index=index,
+            ))
 
         # process task list
         for task in tasks:

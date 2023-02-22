@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 # export all data chunks in timeframe
-./export_data_chunks.py 2023-01-01 2023-01-01
+./export_data_chunks.py 2023-01-01 2023-02-01
 
 # export bundles
 for project in SAGE DAWN; do
