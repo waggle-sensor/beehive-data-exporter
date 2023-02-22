@@ -8,7 +8,7 @@ UPLOAD_ADDR="${UPLOAD_ADDR:-bebop.lcrc.anl.gov}"
 UPLOAD_USER="${UPLOAD_USER:-svcwagglersync}"
 UPLOAD_KEY="${UPLOAD_KEY:-~/.ssh/lcrc}"
 UPLOAD_DIR="${UPLOAD_DIR:-/home/svcwagglersync/waggle/public_html/sagedata/}"
-PROJECTS="${UPLOAD_DIR:-SAGE}"
+PROJECTS="${PROJECTS:-SAGE}"
 
 echo "DATA_DIR=${DATA_DIR}"
 echo "DATA_START_DATE=${DATA_START_DATE}"
