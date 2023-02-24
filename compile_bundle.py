@@ -8,6 +8,7 @@ import json
 from shutil import copyfile, make_archive
 from urllib.request import urlopen
 import re
+import sys
 
 
 def read_json_from_url(url):
@@ -129,6 +130,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
+    parser.add_argument("--startdate", default=None, type=parse_date, help="include data starting from startdate")
+    parser.add_argument("--enddate", default=None, type=parse_date, help="include data ending at enddate")
     parser.add_argument("--include", default="", type=re.compile, help="regexp of ontology to include in bundle")
     parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of ontology to exclude from bundle")
     parser.add_argument("--project", default="", type=re.compile, help="regexp of projects to include in bundle")
@@ -138,6 +141,12 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
         format="%(asctime)s %(message)s",
         datefmt="%Y/%m/%d %H:%M:%S")
+
+    if not args.datadir.exists():
+        sys.exit("error: data directory does not exist")
+
+    if args.startdate and args.enddate and args.startdate > args.enddate:
+        sys.exit("error: start end must be before end date")
 
     template_context = {
         "creation_timestamp": datetime.now(),
@@ -176,6 +185,7 @@ def main():
         # be included in the bundle
         def publish_filter(key):
             # TODO decide what to do about invalid dates
+            name = key["name"]
             date = parse_date(key["date"])
             try:
                 node = nodes_by_vsn[key["vsn"]]
@@ -183,10 +193,19 @@ def main():
                 return False
             commission_date = parse_optional_date(node.get("commission_date"))
             retire_date = parse_optional_date(node.get("retire_date"))
-            return ((args.include.match(key["name"]) is not None) and
-                    (args.exclude.match(key["name"]) is None) and
-                    (commission_date is not None and commission_date <= date) and
-                    (retire_date is None or date <= retire_date))
+            return all([
+                # filter ontology names
+                args.include.match(name) is not None,
+                args.exclude.match(name) is None,
+
+                # filter start / end dates
+                args.startdate is None or args.startdate <= date,
+                args.enddate is None or date <= args.startdate,
+
+                # filter commisioning / retire dates
+                commission_date is not None and commission_date <= date,
+                retire_date is None or date <= retire_date,
+            ])
 
         logging.info("adding data and index")
         build_data_and_index_files(args.datadir, workdir, publish_filter)
