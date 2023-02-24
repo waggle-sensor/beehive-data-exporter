@@ -15,7 +15,7 @@ This searchable archive contains data from Sage nodes. It is organized as follow
 ## Provenance Info
 
 * Project URL: https://sagecontinuum.org
-* Archive Creation Timestamp: {creation_timestamp}
+* Archive Creation Timestamp: ${creation_timestamp}
 
 ## Record Format
 

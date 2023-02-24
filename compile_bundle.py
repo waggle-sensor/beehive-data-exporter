@@ -9,6 +9,7 @@ from shutil import copyfile, make_archive
 from urllib.request import urlopen
 import re
 import sys
+from string import Template
 
 
 def read_json_from_url(url):
@@ -106,9 +107,9 @@ def build_data_and_index_files(datadir, workdir, publish_filter):
     write_json_file(workdir/"index.json", index)
 
 
-def write_template(src, dst, *args, **kwargs):
-    template = Path(src).read_text()
-    output = template.format(*args, **kwargs)
+def write_template(src, dst, **kwargs):
+    template = Template(Path(src).read_text())
+    output = template.substitute(**kwargs)
     dst.write_text(output)
 
 
