@@ -83,17 +83,14 @@ def build_data_and_index_files(datadir, workdir, publish_filter):
 
     with (workdir/"data.ndjson.gz").open("wb") as f:
         for file in files:
-            # read file index data
-            key = json.loads(file.with_name("index.json").read_text())
-
             # read query metadata
             query = json.loads(file.with_name("query.json").read_text())
 
             # only include items matched by the publish filter
-            if not publish_filter(key):
-                logging.debug("skip key %s", key)
+            if not publish_filter(query):
+                logging.debug("skip query data: %s", query)
                 continue
-            logging.debug("add key %s", key)
+            logging.debug("add query data: %s", query)
             # read file data
             data = file.read_bytes()
             # track offset and append to data chunk
@@ -101,7 +98,6 @@ def build_data_and_index_files(datadir, workdir, publish_filter):
             size = f.write(data)
 
             index.append({
-                "key": key,
                 "query": query,
                 "offset": offset,
                 "size": size,
@@ -183,12 +179,11 @@ def main():
 
         # publish_filter will returns whether a given data chunk key should
         # be included in the bundle
-        def publish_filter(key):
-            # TODO decide what to do about invalid dates
-            name = key["name"]
-            date = parse_date(key["date"])
+        def publish_filter(query):
+            name = query["filter"]["name"]
+            date = datetime.strptime(query["start"], "%Y-%m-%dT%H:%M:%SZ")
             try:
-                node = nodes_by_vsn[key["vsn"]]
+                node = nodes_by_vsn[query["filter"]["vsn"]]
             except KeyError:
                 return False
             commission_date = parse_optional_date(node.get("commission_date"))

@@ -44,7 +44,8 @@ except json.JSONDecodeError:
     fatal("invalid index.ndjson file")
 
 def item_matches_patterns(item, patterns):
-    return all(k in item["key"] and pattern.search(item["key"][k]) for k, pattern in patterns.items())
+    query_filter = item["query"]["filter"]
+    return all(k in query_filter and pattern.search(query_filter[k]) for k, pattern in patterns.items())
 
 selected_items = [item for item in index if item_matches_patterns(item, patterns)]
 

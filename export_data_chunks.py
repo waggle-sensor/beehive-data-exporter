@@ -80,20 +80,12 @@ def process_task(task: Task):
 
     with gzip.open(tmpfile, "wt") as f:
         for r in records:
-            # flatten meta data for now. revisit whether we want to do this.
-            for k, v in r["meta"].items():
-                r[f"meta.{k}"] = v
-            del r["meta"]
             r["timestamp"] = round_down_to_microseconds(r["timestamp"])
             print(dump_json_normalized(r), file=f)
 
     tmpfile.rename(outfile)
 
     write_duration = datetime.now() - write_start_time
-
-    # TODO write to index tempfile?
-    indexfile = outfile.with_name("index.json")
-    indexfile.write_text(task.index)
 
     queryfile = outfile.with_name("query.json")
     queryfile.write_text(dump_json_normalized(task.query))
