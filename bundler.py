@@ -131,10 +131,10 @@ def bundler(
     bundle_name: str,
     bundle_year: int,
     bundle_month: int,
-    data_dir: Path,
-    include: re.Pattern,
-    exclude: re.Pattern,
-    project: re.Pattern,
+    data_dir: Path = Path("data"),
+    include: re.Pattern = re.compile(""),
+    exclude: re.Pattern = re.compile("^$"),
+    project: re.Pattern = re.compile(""),
 ):
     assert data_dir.is_dir()
 

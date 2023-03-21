@@ -115,9 +115,9 @@ def daterange(start, end):
 def exporter(
     start_date: datetime,
     end_date: datetime,
-    include: re.Pattern,
-    exclude: re.Pattern,
-    data_dir: Path,
+    include: re.Pattern = re.compile(""),
+    exclude: re.Pattern = re.compile("^$"),
+    data_dir: Path = Path("data"),
 ):
     for date in daterange(start_date, end_date):
         year = date.strftime("%Y")
