@@ -92,10 +92,6 @@ def process_task(task: Task):
     queryfile.write_text(dump_json_normalized(task.query))
 
 
-def datetype(s):
-    return datetime.strptime(s, "%Y-%m-%d").date()
-
-
 def daterange(start_date: datetime.date, end_date: datetime.date):
     assert isinstance(start_date, datetime.date)
     assert isinstance(end_date, datetime.date)
@@ -178,6 +174,9 @@ def exporter(
 
 
 def main():
+    def datetype(s):
+        return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
