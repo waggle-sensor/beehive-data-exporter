@@ -6,6 +6,16 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import re
 from shutil import move, rmtree
+from os import getenv
+import subprocess
+
+
+DATA_DIR = getenv("DATA_DIR", "data")
+UPLOAD_ADDR = getenv("UPLOAD_ADDR", "bebop.lcrc.anl.gov")
+UPLOAD_USER = getenv("UPLOAD_USER", "svcwagglersync")
+UPLOAD_KEY = getenv("UPLOAD_KEY", "~/.ssh/lcrc")
+UPLOAD_DIR = getenv("UPLOAD_DIR", "/home/svcwagglersync/waggle/public_html/sagedata/")
+PROJECTS = getenv("PROJECTS", "SAGE").split()
 
 
 def main():
@@ -23,15 +33,19 @@ def main():
     # start at first day of previous month
     start_date = end_date.replace(day=1)
 
-    logging.info("exporting %s to %s", start_date, end_date)
+    logging.info("exporting data from %s to %s", start_date, end_date)
 
+    # export data
     exporter(
         start_date=start_date,
         end_date=end_date,
         include_re=re.compile("env.temperature|sys.uptime"),
     )
 
-    for project in ["SAGE"]:
+    # build project bundles
+    for project in PROJECTS:
+        logging.info("building bundles for project %s", project)
+
         # build science bundle (everything except system metrics)
         bundler(
             bundle_name=f"{project}-Science",
@@ -50,18 +64,19 @@ def main():
             project_re=re.compile(project),
         )
 
-    # move all tar files into bundle dir
-    bundle_dir = Path("bundles")
-
-    try:
-        rmtree(bundle_dir)
-    except FileNotFoundError:
-        pass
-
-    bundle_dir.mkdir(parents=True, exist_ok=True)
-
+    # upload bundles
     for path in Path(".").glob("*.tar"):
-        move(path, bundle_dir)
+        subprocess.check_call([
+            "rsync",
+            "--verbose",
+            "--archive",
+            "--remove-source-files",
+            "--stats",
+            "-e",
+            f"ssh -i {UPLOAD_KEY} -o StrictHostKeyChecking=no",
+            f"{path}",
+            f"{UPLOAD_USER}@{UPLOAD_ADDR}:{UPLOAD_DIR}/${path.name}"
+        ])
 
 
 if __name__ == "__main__":
