@@ -10,4 +10,4 @@ jobs:
     uses: waggle-sensor/.github/.github/workflows/build-and-push-docker-image.yml@main
     secrets: inherit
     with:
-      platforms: linux/amd64
+      platforms: linux/amd64,linux/arm64
