@@ -36,11 +36,10 @@ def main():
 
     logging.info("exporting data from %s to %s", start_date, end_date)
 
-    # export data
+    # export all data between start and end date
     exporter(
         start_date=start_date,
         end_date=end_date,
-        include_re=re.compile("env.temperature|sys.uptime"),
     )
 
     # build project bundles
