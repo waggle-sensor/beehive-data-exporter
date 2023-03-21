@@ -11,6 +11,9 @@ import re
 from string import Template
 
 
+__all__ = ["bundler"]
+
+
 def read_json_from_url(url):
     with urlopen(url) as f:
         return json.load(f)
