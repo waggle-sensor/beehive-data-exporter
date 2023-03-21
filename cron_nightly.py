@@ -6,7 +6,6 @@ from bundler import bundler
 from datetime import datetime, timedelta
 from pathlib import Path
 import re
-from shutil import move, rmtree
 from os import getenv
 import subprocess
 
