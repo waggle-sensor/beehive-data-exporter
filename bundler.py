@@ -132,9 +132,9 @@ def bundler(
     bundle_year: int,
     bundle_month: int,
     data_dir: Path = Path("data"),
-    include: re.Pattern = re.compile(""),
-    exclude: re.Pattern = re.compile("^$"),
-    project: re.Pattern = re.compile(""),
+    include_re: re.Pattern = re.compile(""),
+    exclude_re: re.Pattern = re.compile("^$"),
+    project_re: re.Pattern = re.compile(""),
 ):
     assert data_dir.is_dir()
 
@@ -157,7 +157,7 @@ def bundler(
         logging.info("adding node metadata")
         nodes = clean_nodes(read_json_from_url("https://api.sagecontinuum.org/production"))
         # only include nodes which are part of project
-        nodes = [node for node in nodes if project.match(node["project"])]
+        nodes = [node for node in nodes if project_re.match(node["project"])]
         write_json_file(workdir/"nodes.json", nodes)
         write_human_readable_node_file(workdir/"nodes.md", nodes)
 
@@ -186,8 +186,8 @@ def bundler(
             retire_date = parse_optional_date(node.get("retire_date"))
             return all([
                 # filter ontology names
-                include.match(name) is not None,
-                exclude.match(name) is None,
+                include_re.match(name) is not None,
+                exclude_re.match(name) is None,
 
                 # filter dates
                 date.year == bundle_year,
@@ -229,9 +229,9 @@ def main():
             bundle_year=args.bundle_year,
             bundle_month=args.bundle_month,
             data_dir=args.datadir,
-            include=args.include,
-            exclude=args.exclude,
-            project=args.project,
+            include_re=args.include,
+            exclude_re=args.exclude,
+            project_re=args.project,
         )
     except KeyboardInterrupt:
         pass

@@ -3,7 +3,7 @@ import argparse
 from urllib.request import urlopen
 import json
 import gzip
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import re
 from pathlib import Path
 import logging
@@ -115,8 +115,8 @@ def daterange(start, end):
 def exporter(
     start_date: datetime,
     end_date: datetime,
-    include: re.Pattern = re.compile(""),
-    exclude: re.Pattern = re.compile("^$"),
+    include_re: re.Pattern = re.compile(""),
+    exclude_re: re.Pattern = re.compile("^$"),
     data_dir: Path = Path("data"),
 ):
     for date in daterange(start_date, end_date):
@@ -136,9 +136,9 @@ def exporter(
         tasks = []
 
         for r in get_query_records_with_retry({"start": date, "end": date + timedelta(days=1), "tail": 1}):
-            if exclude.match(r["name"]):
+            if exclude_re.match(r["name"]):
                 continue
-            if not include.match(r["name"]):
+            if not include_re.match(r["name"]):
                 continue
             # build filters to be used later
             filters = {}
@@ -199,9 +199,9 @@ def main():
         exporter(
             start_date=args.start_date,
             end_date=args.end_date,
-            include=args.include,
-            exclude=args.exclude,
-            data_dir=args.datadir
+            data_dir=args.datadir,
+            include_re=args.include,
+            exclude_re=args.exclude,
         )
     except KeyboardInterrupt:
         pass
