@@ -177,7 +177,7 @@ def bundler(
         # be included in the bundle
         def publish_filter(query):
             name = query["filter"]["name"]
-            date = datetime.strptime(query["start"], "%Y-%m-%dT%H:%M:%SZ")
+            date = datetime.strptime(query["start"], "%Y-%m-%d")
             try:
                 node = nodes_by_vsn[query["filter"]["vsn"]]
             except KeyError:

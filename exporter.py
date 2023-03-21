@@ -3,7 +3,7 @@ import argparse
 from urllib.request import urlopen
 import json
 import gzip
-from datetime import datetime, timedelta, date
+import datetime
 import re
 from pathlib import Path
 import logging
@@ -30,7 +30,9 @@ DATA_QUERY_API_URL = os.getenv("DATA_QUERY_API_URL", "https://data.sagecontinuum
 class DatetimeEncoder(json.JSONEncoder):
 
     def default(self, obj):
-        if isinstance(obj, datetime):
+        if isinstance(obj, datetime.date):
+             return obj.strftime("%Y-%m-%d")
+        if isinstance(obj, datetime.datetime):
              return obj.strftime("%Y-%m-%dT%H:%M:%SZ")
         return json.JSONEncoder.default(self, obj)
 
@@ -74,12 +76,9 @@ def process_task(task: Task):
     outfile.parent.mkdir(parents=True, exist_ok=True)
 
     # download results from data api
-    download_start_time = datetime.now()
     records = get_query_records_with_retry(task.query)
-    download_duration = datetime.now() - download_start_time
 
     # write results
-    write_start_time = datetime.now()
     tmpfile = outfile.with_suffix(".tmp")
 
     with gzip.open(tmpfile, "wt") as f:
@@ -89,32 +88,27 @@ def process_task(task: Task):
 
     tmpfile.rename(outfile)
 
-    write_duration = datetime.now() - write_start_time
-
     queryfile = outfile.with_name("query.json")
     queryfile.write_text(dump_json_normalized(task.query))
 
-    return {
-        "task": task,
-        "download_duration": str(download_duration),
-        "write_duration": str(write_duration),
-    }
-
 
 def datetype(s):
-    return datetime.strptime(s, "%Y-%m-%d")
+    return datetime.strptime(s, "%Y-%m-%d").date()
 
 
-def daterange(start, end):
-    date = start
-    while date <= end:
+def daterange(start_date: datetime.date, end_date: datetime.date):
+    assert isinstance(start_date, datetime.date)
+    assert isinstance(end_date, datetime.date)
+    date = start_date
+    while date <= end_date:
+        assert isinstance(date, datetime.date)
         yield date
-        date += timedelta(days=1)
+        date += datetime.timedelta(days=1)
 
 
 def exporter(
-    start_date: datetime,
-    end_date: datetime,
+    start_date: datetime.date,
+    end_date: datetime.date,
     include_re: re.Pattern = re.compile(""),
     exclude_re: re.Pattern = re.compile("^$"),
     data_dir: Path = Path("data"),
@@ -124,7 +118,9 @@ def exporter(
         month = date.strftime("%m")
         day = date.strftime("%d")
 
-        donefile = Path(data_dir, year, month, day, ".done")
+        work_dir = Path(data_dir, year, month, day)
+
+        donefile = Path(work_dir, ".done")
 
         if donefile.exists():
             logging.debug("already processed date %s", date)
@@ -135,7 +131,7 @@ def exporter(
         # build task list
         tasks = []
 
-        for r in get_query_records_with_retry({"start": date, "end": date + timedelta(days=1), "tail": 1}):
+        for r in get_query_records_with_retry({"start": date, "end": date + datetime.timedelta(days=1), "tail": 1}):
             if exclude_re.match(r["name"]):
                 continue
             if not include_re.match(r["name"]):
@@ -151,7 +147,7 @@ def exporter(
 
             query = {
                 "start": date,
-                "end": date + timedelta(days=1),
+                "end": date + datetime.timedelta(days=1),
                 "filter": {
                     "name": r["name"],
                 }
@@ -160,7 +156,7 @@ def exporter(
             for k, v in r["meta"].items():
                 query["filter"][k] = v
 
-            path = Path(data_dir, year, month, day, r["name"], r["meta"]["vsn"], chunk_id, "data.ndjson.gz")
+            path = Path(work_dir, chunk_id[:2], chunk_id[2:], "data.ndjson.gz")
 
             # skip task if data file has already been created
             if path.exists():
