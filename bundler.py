@@ -8,7 +8,6 @@ import json
 from shutil import copyfile, make_archive
 from urllib.request import urlopen
 import re
-import sys
 from string import Template
 
 
@@ -119,41 +118,32 @@ def parse_optional_date(s):
     return parse_date(s)
 
 
-def parse_date(s):
+def parse_date(s: str) -> datetime:
     return datetime.strptime(s, "%Y-%m-%d")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--debug", action="store_true", help="enable debug logging")
-    parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
-    parser.add_argument("--startdate", default=None, type=parse_date, help="include data starting from startdate")
-    parser.add_argument("--enddate", default=None, type=parse_date, help="include data ending at enddate")
-    parser.add_argument("--include", default="", type=re.compile, help="regexp of ontology to include in bundle")
-    parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of ontology to exclude from bundle")
-    parser.add_argument("--project", default="", type=re.compile, help="regexp of projects to include in bundle")
-    parser.add_argument("bundle_name", help="name of output bundle")
-    args = parser.parse_args()
-
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
-        format="%(asctime)s %(message)s",
-        datefmt="%Y/%m/%d %H:%M:%S")
-
-    if not args.datadir.exists():
-        sys.exit("error: data directory does not exist")
-
-    if args.startdate and args.enddate and args.startdate > args.enddate:
-        sys.exit("error: start end must be before end date")
+def bundler(
+    bundle_name: str,
+    bundle_year: int,
+    bundle_month: int,
+    data_dir: Path,
+    include: re.Pattern,
+    exclude: re.Pattern,
+    project: re.Pattern,
+):
+    assert data_dir.is_dir()
 
     template_context = {
         "creation_timestamp": datetime.now(),
     }
 
+    archive_name = bundle_name + f"-{bundle_year:04d}-{bundle_month:02d}"
+
     with TemporaryDirectory() as rootdir:
-        logging.info("populating new %s bundle", args.bundle_name)
+        logging.info("populating new %s bundle", bundle_name)
 
         # put items under .date subdir to help avoid prevent untarring over existing data
-        workdir = Path(rootdir, args.bundle_name + datetime.now().strftime(".%Y-%m-%d"))
+        workdir = Path(rootdir, archive_name)
         workdir.mkdir(parents=True, exist_ok=True)
 
         logging.info("adding README")
@@ -162,7 +152,7 @@ def main():
         logging.info("adding node metadata")
         nodes = clean_nodes(read_json_from_url("https://api.sagecontinuum.org/production"))
         # only include nodes which are part of project
-        nodes = [node for node in nodes if args.project.match(node["project"])]
+        nodes = [node for node in nodes if project.match(node["project"])]
         write_json_file(workdir/"nodes.json", nodes)
         write_human_readable_node_file(workdir/"nodes.md", nodes)
 
@@ -191,12 +181,12 @@ def main():
             retire_date = parse_optional_date(node.get("retire_date"))
             return all([
                 # filter ontology names
-                args.include.match(name) is not None,
-                args.exclude.match(name) is None,
+                include.match(name) is not None,
+                exclude.match(name) is None,
 
-                # filter start / end dates
-                args.startdate is None or args.startdate <= date,
-                args.enddate is None or date <= args.startdate,
+                # filter dates
+                date.year == bundle_year,
+                date.month == bundle_month,
 
                 # filter commisioning / retire dates
                 commission_date is not None and commission_date <= date,
@@ -204,13 +194,36 @@ def main():
             ])
 
         logging.info("adding data and index")
-        build_data_and_index_files(args.datadir, workdir, publish_filter)
+        build_data_and_index_files(data_dir, workdir, publish_filter)
 
-        logging.info("creating tar file")
-        make_archive(args.bundle_name, "tar", rootdir, workdir.relative_to(rootdir))
+        logging.info("creating archive file %s", archive_name)
+        make_archive(archive_name, "tar", rootdir, workdir.relative_to(rootdir))
 
-        logging.info("finished creating %s bundle", args.bundle_name)
+        logging.info("finished creating %s bundle", bundle_name)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="enable debug logging")
+    parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
+    parser.add_argument("--include", default="", type=re.compile, help="regexp of ontology to include in bundle")
+    parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of ontology to exclude from bundle")
+    parser.add_argument("--project", default="", type=re.compile, help="regexp of projects to include in bundle")
+    parser.add_argument("bundle_name", help="name of output bundle")
+    parser.add_argument("bundle_year", type=int, help="include data ending at enddate")
+    parser.add_argument("bundle_month", type=int, help="include data ending at enddate")
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y/%m/%d %H:%M:%S")
+
+    bundler(
+        bundle_name=args.bundle_name,
+        bundle_year=args.bundle_year,
+        bundle_month=args.bundle_month,
+        data_dir=args.datadir,
+        include=args.include,
+        exclude=args.exclude,
+        project=args.project,
+    )
