@@ -16,7 +16,7 @@ This will download, chunk and index data into `data/` for later compilation. Now
 
 ## Measurement Information
 
-Detailed metadata is in the included `variables.ndjson` file. This file is a machine readable list of items
+Detailed metadata is included in the `ontology.json` and `ontology.md` files. These are machine readable and human readable ontologies
 containing measurement names, descriptions and units. For example:
 
 ```
