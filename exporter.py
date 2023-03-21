@@ -14,6 +14,10 @@ import time
 import os
 from typing import NamedTuple
 
+
+__all__ = ["exporter"]
+
+
 class Task(NamedTuple):
     path: Path
     query: dict
@@ -108,29 +112,19 @@ def daterange(start, end):
         date += timedelta(days=1)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--debug", action="store_true", help="enable debug logging")
-    parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
-    parser.add_argument("--include", default="", help="regexp of measurements to include in bundle")
-    parser.add_argument("--exclude", default="^$", help="regexp of measurements to exclude from bundle")
-    parser.add_argument("start_date", type=datetype, help="starting date to export")
-    parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
-    args = parser.parse_args()
-
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
-                        format="%(asctime)s %(message)s",
-                        datefmt="%Y/%m/%d %H:%M:%S")
-
-    includeRE = re.compile(args.include)
-    excludeRE = re.compile(args.exclude)
-
-    for date in daterange(args.start_date, args.end_date):
+def exporter(
+    start_date: datetime,
+    end_date: datetime,
+    include: re.Pattern,
+    exclude: re.Pattern,
+    data_dir: Path,
+):
+    for date in daterange(start_date, end_date):
         year = date.strftime("%Y")
         month = date.strftime("%m")
         day = date.strftime("%d")
 
-        donefile = Path(args.datadir, year, month, day, ".done")
+        donefile = Path(data_dir, year, month, day, ".done")
 
         if donefile.exists():
             logging.debug("already processed date %s", date)
@@ -142,9 +136,9 @@ def main():
         tasks = []
 
         for r in get_query_records_with_retry({"start": date, "end": date + timedelta(days=1), "tail": 1}):
-            if excludeRE.match(r["name"]):
+            if exclude.match(r["name"]):
                 continue
-            if not includeRE.match(r["name"]):
+            if not include.match(r["name"]):
                 continue
             # build filters to be used later
             filters = {}
@@ -166,7 +160,7 @@ def main():
             for k, v in r["meta"].items():
                 query["filter"][k] = v
 
-            path = Path(args.datadir, year, month, day, r["name"], r["meta"]["vsn"], chunk_id, "data.ndjson.gz")
+            path = Path(data_dir, year, month, day, r["name"], r["meta"]["vsn"], chunk_id, "data.ndjson.gz")
 
             # skip task if data file has already been created
             if path.exists():
@@ -188,7 +182,26 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="enable debug logging")
+    parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
+    parser.add_argument("--include", default="", type=re.compile, help="regexp of measurements to include in bundle")
+    parser.add_argument("--exclude", default="^$", type=re.compile, help="regexp of measurements to exclude from bundle")
+    parser.add_argument("start_date", type=datetype, help="starting date to export")
+    parser.add_argument("end_date", type=datetype, help="ending date to export (inclusive)")
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+                        format="%(asctime)s %(message)s",
+                        datefmt="%Y/%m/%d %H:%M:%S")
+
     try:
-        main()
+        exporter(
+            start_date=args.start_date,
+            end_date=args.end_date,
+            include=args.include,
+            exclude=args.exclude,
+            data_dir=args.datadir
+        )
     except KeyboardInterrupt:
         pass

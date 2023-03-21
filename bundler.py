@@ -124,6 +124,8 @@ def parse_optional_date(s):
 def parse_date(s: str) -> datetime:
     return datetime.strptime(s, "%Y-%m-%d")
 
+# TODO configure using functional opts pattern? Example:
+# bundler = Bundler().exclude("^sys.*").project("SAGE")
 
 def bundler(
     bundle_name: str,
@@ -221,12 +223,15 @@ if __name__ == "__main__":
         format="%(asctime)s %(message)s",
         datefmt="%Y/%m/%d %H:%M:%S")
 
-    bundler(
-        bundle_name=args.bundle_name,
-        bundle_year=args.bundle_year,
-        bundle_month=args.bundle_month,
-        data_dir=args.datadir,
-        include=args.include,
-        exclude=args.exclude,
-        project=args.project,
-    )
+    try:
+        bundler(
+            bundle_name=args.bundle_name,
+            bundle_year=args.bundle_year,
+            bundle_month=args.bundle_month,
+            data_dir=args.datadir,
+            include=args.include,
+            exclude=args.exclude,
+            project=args.project,
+        )
+    except KeyboardInterrupt:
+        pass
