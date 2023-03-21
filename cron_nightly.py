@@ -11,7 +11,7 @@ from os import getenv
 import subprocess
 
 
-DATA_DIR = getenv("DATA_DIR", "data")
+DATA_DIR = Path(getenv("DATA_DIR", "data"))
 UPLOAD_ADDR = getenv("UPLOAD_ADDR", "bebop.lcrc.anl.gov")
 UPLOAD_USER = getenv("UPLOAD_USER", "svcwagglersync")
 UPLOAD_KEY = getenv("UPLOAD_KEY", "~/.ssh/lcrc")
@@ -40,6 +40,7 @@ def main():
     exporter(
         start_date=start_date,
         end_date=end_date,
+        data_dir=DATA_DIR,
     )
 
     # build project bundles
@@ -53,6 +54,7 @@ def main():
             bundle_month=start_date.month,
             exclude_re=re.compile("^sys.*"),
             project_re=re.compile(project),
+            data_dir=DATA_DIR,
         )
 
         # build system bundle (only system metrics)
@@ -62,6 +64,7 @@ def main():
             bundle_month=start_date.month,
             include_re=re.compile("^sys.*"),
             project_re=re.compile(project),
+            data_dir=DATA_DIR,
         )
 
     # upload bundles
