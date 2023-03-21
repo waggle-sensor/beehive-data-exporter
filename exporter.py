@@ -181,7 +181,7 @@ def exporter(
         donefile.touch()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument("--datadir", default="data", type=Path, help="root data directory")
@@ -205,3 +205,7 @@ if __name__ == "__main__":
         )
     except KeyboardInterrupt:
         pass
+
+
+if __name__ == "__main__":
+    main()
