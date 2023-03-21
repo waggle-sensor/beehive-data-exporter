@@ -5,4 +5,4 @@ RUN apt-get update && apt-get install -y \
     rsync \
     && rm -rf /var/lib/apt/lists/*
 COPY . .
-CMD ["/app/cron_nightly_update.sh"]
+CMD ["/app/cron_nightly.py"]

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import logging
 from exporter import exporter
@@ -14,7 +15,7 @@ DATA_DIR = getenv("DATA_DIR", "data")
 UPLOAD_ADDR = getenv("UPLOAD_ADDR", "bebop.lcrc.anl.gov")
 UPLOAD_USER = getenv("UPLOAD_USER", "svcwagglersync")
 UPLOAD_KEY = getenv("UPLOAD_KEY", "~/.ssh/lcrc")
-UPLOAD_DIR = getenv("UPLOAD_DIR", "/home/svcwagglersync/waggle/public_html/sagedata/")
+UPLOAD_DIR = Path(getenv("UPLOAD_DIR", "/home/svcwagglersync/waggle/public_html/sagedata/"))
 PROJECTS = getenv("PROJECTS", "SAGE").split()
 
 
@@ -75,7 +76,7 @@ def main():
             "-e",
             f"ssh -i {UPLOAD_KEY} -o StrictHostKeyChecking=no",
             f"{path}",
-            f"{UPLOAD_USER}@{UPLOAD_ADDR}:{UPLOAD_DIR}/${path.name}"
+            f"{UPLOAD_USER}@{UPLOAD_ADDR}:{UPLOAD_DIR/path.name}"
         ])
 
 
