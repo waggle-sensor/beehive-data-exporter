@@ -1,6 +1,6 @@
 *
 !exporter.py
 !bundler.py
-!cron_nightly_update.sh
+!cron_nightly.py
 !query.py
 !templates/
