@@ -7,19 +7,10 @@ import sys
 import gzip
 
 
-def fatal(msg):
-    print(msg)
-    sys.exit(1)
-
-
-def read_index_file(path):
-    return json.loads(Path(path).read_text())
-
-
 def build_query_patterns(query):
     patterns = {}
 
-    for s in args.query:
+    for s in query:
         m = re.match("([A-Za-z0-9]+)=(\S+)$", s)
         if m is None:
             raise ValueError(f"Invalid query {s!r}.")
@@ -29,30 +20,32 @@ def build_query_patterns(query):
 
     return patterns
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--root", default=".", type=Path, help="root directory to work in")
-parser.add_argument("query", nargs="*", help="query terms")
-args = parser.parse_args()
 
-patterns = build_query_patterns(args.query)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", default=".", type=Path, help="root directory to work in")
+    parser.add_argument("query", nargs="*", help="query terms")
+    args = parser.parse_args()
 
-try:
-    index = read_index_file(Path(args.root, "index.json"))
-except FileNotFoundError:
-    fatal("no index.json file in data folder")
-except json.JSONDecodeError:
-    fatal("invalid index.ndjson file")
+    patterns = build_query_patterns(args.query)
 
-def item_matches_patterns(item, patterns):
-    query_filter = item["query"]["filter"]
-    return all(k in query_filter and pattern.search(query_filter[k]) for k, pattern in patterns.items())
+    def item_matches_patterns(item, patterns):
+        query_filter = item["query"]["filter"]
+        return all(k in query_filter and pattern.search(query_filter[k]) for k, pattern in patterns.items())
 
-selected_items = [item for item in index if item_matches_patterns(item, patterns)]
+    # get all matching items from index
+    with Path(args.root, "index.ndjson").open("r") as f:
+        matching_items = [item for item in map(json.loads, f) if item_matches_patterns(item, patterns)]
 
-with Path(args.root, "data.ndjson.gz").open("rb") as f:
-    for item in selected_items:
-        f.seek(item["offset"])
-        data = f.read(item["size"])
-        sys.stdout.write(gzip.decompress(data).decode())
+    # write gzip chunks corresponding to matching item
+    with Path(args.root, "data.ndjson.gz").open("rb") as f:
+        for item in matching_items:
+            f.seek(item["offset"])
+            data = f.read(item["size"])
+            sys.stdout.write(gzip.decompress(data).decode())
 
-# TODO make this match data API...
+    # TODO make this match data API...
+
+
+if __name__ == "__main__":
+    main()

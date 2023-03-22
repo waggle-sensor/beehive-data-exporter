@@ -19,9 +19,11 @@ def read_json_from_url(url):
         return json.load(f)
 
 
-def write_json_file(path, obj):
+def write_ndjson_file(path, items):
     with open(path, "w") as f:
-        json.dump(obj, f, separators=(",", ":"), sort_keys=True)
+        for item in items:
+            json.dump(item, f, separators=(",", ":"), sort_keys=True)
+            f.write("\n")
 
 
 def clean_nodes(items):
@@ -106,7 +108,7 @@ def build_data_and_index_files(datadir, workdir, publish_filter):
                 "size": size,
             })
 
-    write_json_file(workdir/"index.json", index)
+    write_ndjson_file(workdir/"index.ndjson", index)
 
 
 def write_template(src, dst, **kwargs):
@@ -158,12 +160,12 @@ def bundler(
         nodes = clean_nodes(read_json_from_url("https://api.sagecontinuum.org/production"))
         # only include nodes which are part of project
         nodes = [node for node in nodes if project_re.match(node["project"])]
-        write_json_file(workdir/"nodes.json", nodes)
+        write_ndjson_file(workdir/"nodes.ndjson", nodes)
         write_human_readable_node_file(workdir/"nodes.md", nodes)
 
         logging.info("adding ontology metadata")
         ontology = clean_ontology(read_json_from_url("https://api.sagecontinuum.org/ontology"))
-        write_json_file(workdir/"ontology.json", ontology)
+        write_ndjson_file(workdir/"ontology.ndjson", ontology)
         write_human_readable_ontology_file(workdir/"ontology.md", ontology)
 
         logging.info("adding query executable")
