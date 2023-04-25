@@ -3,6 +3,7 @@ import argparse
 import logging
 from exporter import exporter
 from bundler import bundler
+from doi import EZID
 from datetime import datetime, timedelta
 from pathlib import Path
 import re
@@ -17,6 +18,12 @@ UPLOAD_KEY = getenv("UPLOAD_KEY", "~/.ssh/lcrc")
 UPLOAD_DIR = Path(getenv("UPLOAD_DIR", "/home/svcwagglersync/waggle/public_html/sagedata/"))
 PROJECTS = getenv("PROJECTS", "SAGE").split()
 
+#EZID DOI
+EZID_USERNAME = getenv("EZID_USERNAME")
+EZID_PASSWORD = getenv("EZID_PASSWORD")
+EZID_SHOULDER = getenv("EZID_SHOULDER")
+metadata_template = 'templates/metadata_bundle.json'
+ezid = EZID(EZID_USERNAME,EZID_PASSWORD)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -43,6 +50,7 @@ def main():
     )
 
     # build project bundles
+    bundles = []
     for project in PROJECTS:
         logging.info("building bundles for project %s", project)
 
@@ -65,6 +73,8 @@ def main():
             project_re=re.compile(project),
             data_dir=DATA_DIR,
         )
+        bundles.append(f"{project}-Science")
+        bundles.append(f"{project}-System")
 
     # upload bundles
     for path in Path(".").glob("*.tar"):
@@ -80,6 +90,9 @@ def main():
             f"{UPLOAD_USER}@{UPLOAD_ADDR}:{UPLOAD_DIR/path.name}"
         ])
 
+    #issue DOI
+    doi_url = ezid.issue_doi(metadata_template,EZID_SHOULDER,start_date,end_date,bundles)
+    logging.info("DOI URL: %s", doi_url)
 
 if __name__ == "__main__":
     main()
