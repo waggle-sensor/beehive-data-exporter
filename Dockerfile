@@ -5,4 +5,5 @@ RUN apt-get update && apt-get install -y \
     rsync \
     && rm -rf /var/lib/apt/lists/*
 COPY . .
+RUN pip install -r requirements.txt
 CMD ["/app/cron_nightly.py"]

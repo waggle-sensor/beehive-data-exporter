@@ -1,0 +1,47 @@
+{
+    "identifiers": [{
+        "identifierType": "DOI",
+        "identifier": ":tba"
+    }],
+    "creators": [
+        {"name": "Sage"}
+    ],
+    "titles": [
+        {"title": "Data Bundle" }
+    ],
+    "publisher": "Sage Continuum: Cyberinfrastructure for AI at the Edge",
+    "publicationYear": "2021",
+    "types": {
+        "resourceType": "Dataset",
+        "resourceTypeGeneral": "Dataset"
+    },
+    "dates":[
+        {
+            "date": "2021-01-01",
+            "dateType": "Created"
+        },
+        {
+            "date": "2021-01-01",
+            "dateType": "Available"
+        },
+        {
+            "date": "2022-01-01/2022-02-01",
+            "dateType": "Collected"
+        }
+    ],
+    "relatedIdentifiers":[
+        {
+            "relatedIdentifier":"https://web.lcrc.anl.gov/public/waggle/sagedata/SAGE-Data.tar",
+            "relatedIdentifierType": "URL",
+            "relationType": "Describes"
+        }
+    ],
+    "fundingReferences":[{
+        "funderName":"National Science Foundation",
+        "funderIdentifierType": "Crossref Funder ID",
+        "funderIdentifier":"https://doi.org/10.13039/100000001",
+        "awardNumber":"1935984",
+        "awardTitle":"SAGE: A Software-Defined Sensor Network"
+    }],
+    "schemaVersion": "http://datacite.org/schema/kernel-4"
+}
