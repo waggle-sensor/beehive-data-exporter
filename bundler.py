@@ -201,7 +201,14 @@ def bundler(
             ])
 
         logging.info("adding data and index")
-        build_data_and_index_files(data_dir, workdir, publish_filter)
+        try:
+            build_data_and_index_files(data_dir, workdir, publish_filter)
+        except OSError as e:
+            if e.errno == 28:  # Errno 28 indicates "No space left on device"
+                print("Disk is full. Take appropriate action.")
+            else:
+                # Handle other OS-related errors
+                print("An error occurred:", e)
 
         logging.info("creating archive file %s", archive_name)
         make_archive(archive_name, "tar", rootdir, workdir.relative_to(rootdir))
